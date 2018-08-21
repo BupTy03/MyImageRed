@@ -478,7 +478,7 @@ void MainWindow::on_NextBtn_clicked()
     if(CurrFileIt == end)
         CurrFileIt = begin;
     else{
-        CurrFileIt++;
+        ++CurrFileIt;
         if(CurrFileIt == end)
             CurrFileIt = begin;
     }

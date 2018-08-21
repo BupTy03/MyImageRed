@@ -35,7 +35,7 @@ tuple<pair<uchar, uchar>, pair<uchar, uchar>, pair<uchar, uchar>> ImageProc::Min
         comp(green, G);
         comp(blue, B);
 
-        first++;
+        ++first;
     }
 
     return make_tuple(R, G, B);
@@ -53,7 +53,7 @@ tuple<ull, ull, ull> ImageProc::ColorSum(ConstMyColorIterator first, ConstMyColo
         G += first.green();
         B += first.blue();
 
-        first++;
+        ++first;
     }
 
     return make_tuple(R, G, B);

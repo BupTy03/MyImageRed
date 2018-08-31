@@ -16,7 +16,7 @@ public:
     QRgb& operator*(){ return *p; }
     int operator-(MyColorIterator const& other){ return this->p - other.p; }
     MyColorIterator& operator++() { p++; return *this; }
-    MyColorIterator& operator++(int) { p++; return *this; }
+    MyColorIterator& operator++(int) { auto tmp = *this; p++; return tmp; }
 
     static MyColorIterator Begin(QImage& img){ return MyColorIterator((QRgb*)img.bits()); }
     static MyColorIterator End(QImage& img) { return MyColorIterator((QRgb*)img.bits() + img.width() * img.height()); }

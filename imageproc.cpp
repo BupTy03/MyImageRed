@@ -11,7 +11,7 @@ void ForEachPixel(MyColorIterator first, MyColorIterator last, F func, Args&&...
     while(first != last)
     {
         *first = func(*first, std::forward<Args>(args)...);
-        first++;
+        ++first;
     }
 }
 
@@ -92,11 +92,11 @@ Uint8 find_median(Matrix<Uint8>& m, array<int, 256>& hist, bool ns)
         hist.fill(0);
 
         for (const auto i : m)
-            hist[i]++;
+            ++hist[i];
     }
     else {
         for (int i = 0; i < ksz; i++)
-            hist[m[i][ksz - 1]]++;
+            ++hist[m[i][ksz - 1]];
     }
 
     int count = 0;
@@ -112,7 +112,7 @@ Uint8 find_median(Matrix<Uint8>& m, array<int, 256>& hist, bool ns)
     }
 
     for (int i = 0; i < ksz; i++)
-        hist[m[i][0]]--;
+        --hist[m[i][0]];
 
     return result;
 }
@@ -126,11 +126,11 @@ Uint8 find_min(Matrix<Uint8>& m, array<int, 256>& hist, bool ns)
         hist.fill(0);
 
         for (const auto i : m)
-            hist[i]++;
+            ++hist[i];
     }
     else {
         for (int i = 0; i < ksz; i++)
-            hist[m[i][ksz - 1]]++;
+            ++hist[m[i][ksz - 1]];
     }
 
     Uint8 result = 0;
@@ -144,7 +144,7 @@ Uint8 find_min(Matrix<Uint8>& m, array<int, 256>& hist, bool ns)
     }
 
     for (int i = 0; i < ksz; i++)
-        hist[m[i][0]]--;
+        --hist[m[i][0]];
 
     return result;
 }
@@ -158,11 +158,11 @@ Uint8 find_max(Matrix<Uint8>& m, array<int, 256>& hist, bool ns)
         hist.fill(0);
 
         for (const auto i : m)
-            hist[i]++;
+            ++hist[i];
     }
     else {
         for (int i = 0; i < ksz; i++)
-            hist[m[i][ksz - 1]]++;
+            ++hist[m[i][ksz - 1]];
     }
 
     Uint8 result = 0;
@@ -176,7 +176,7 @@ Uint8 find_max(Matrix<Uint8>& m, array<int, 256>& hist, bool ns)
     }
 
     for (int i = 0; i < ksz; i++)
-        hist[m[i][0]]--;
+        --hist[m[i][0]];
 
     return result;
 }

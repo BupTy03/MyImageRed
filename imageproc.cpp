@@ -44,7 +44,7 @@ tuple<pair<uchar, uchar>, pair<uchar, uchar>, pair<uchar, uchar>> MinMaxColor(Co
         comp(green, G);
         comp(blue, B);
 
-        first++;
+        ++first;
     }
 
     return make_tuple(R, G, B);
@@ -62,7 +62,7 @@ tuple<ull, ull, ull> ColorSum(ConstMyColorIterator first, ConstMyColorIterator l
         G += first.green();
         B += first.blue();
 
-        first++;
+        ++first;
     }
 
     return make_tuple(R, G, B);

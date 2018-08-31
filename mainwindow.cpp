@@ -494,7 +494,7 @@ void MainWindow::on_NextBtn_clicked()
     loadImage(*CurrFileIt);
 
     EnableAll(true);
-    ui->ProgressLabel->setText("");
+    ui->ProgressLabel->setText("Okai");
 }
 
 void MainWindow::on_QuickSaveBtn_clicked()

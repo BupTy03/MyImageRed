@@ -1,12 +1,21 @@
 #include "imageproc.h"
-#include <QEventLoop>
-#include <thread>
+
 #include <utility>
-#include <functional>
+#include <future>
 
-ImageProc::ImageProc(QObject *parent):QObject(parent) {}
+#include "timer.h"
 
-tuple<pair<uchar, uchar>, pair<uchar, uchar>, pair<uchar, uchar>> ImageProc::MinMaxColor(ConstMyColorIterator first, ConstMyColorIterator last)
+template<typename F, typename... Args>
+void ForEachPixel(MyColorIterator first, MyColorIterator last, F func, Args&&... args)
+{
+    while(first != last)
+    {
+        *first = func(*first, std::forward<Args>(args)...);
+        first++;
+    }
+}
+
+tuple<pair<uchar, uchar>, pair<uchar, uchar>, pair<uchar, uchar>> MinMaxColor(ConstMyColorIterator first, ConstMyColorIterator last)
 {
     uchar red = first.red();
     uchar green = first.green();
@@ -41,7 +50,7 @@ tuple<pair<uchar, uchar>, pair<uchar, uchar>, pair<uchar, uchar>> ImageProc::Min
     return make_tuple(R, G, B);
 }
 
-tuple<ull, ull, ull> ImageProc::ColorSum(ConstMyColorIterator first, ConstMyColorIterator last)
+tuple<ull, ull, ull> ColorSum(ConstMyColorIterator first, ConstMyColorIterator last)
 {
     ull R = 0;
     ull G = 0;
@@ -59,14 +68,14 @@ tuple<ull, ull, ull> ImageProc::ColorSum(ConstMyColorIterator first, ConstMyColo
     return make_tuple(R, G, B);
 }
 
-inline Uint8 ImageProc::ovfctrl(const int x) noexcept
+inline Uint8 ovfctrl(const int x) noexcept
 {
     if(x > 255) return 255;
     if(x < 0) return 0;
     return x;
 }
 
-inline int ImageProc::b_ctrl(int& x, const int max) noexcept
+inline int b_ctrl(int& x, const int max) noexcept
 {
     if(x < 0)		return x = x * (-1) - 1;
     if(x >= max)	return x = max - (x - (max - 1));
@@ -74,7 +83,7 @@ inline int ImageProc::b_ctrl(int& x, const int max) noexcept
     return x;
 }
 
-Uint8 ImageProc::find_median(Matrix<Uint8>& m, array<int, 256>& hist, bool ns)
+Uint8 find_median(Matrix<Uint8>& m, array<int, 256>& hist, bool ns)
 {
     int ksz = m.size_dim1();
 
@@ -107,6 +116,98 @@ Uint8 ImageProc::find_median(Matrix<Uint8>& m, array<int, 256>& hist, bool ns)
 
     return result;
 }
+
+Uint8 find_min(Matrix<Uint8>& m, array<int, 256>& hist, bool ns)
+{
+    int ksz = m.size_dim1();
+
+    if (ns)
+    {
+        hist.fill(0);
+
+        for (const auto i : m)
+            hist[i]++;
+    }
+    else {
+        for (int i = 0; i < ksz; i++)
+            hist[m[i][ksz - 1]]++;
+    }
+
+    Uint8 result = 0;
+
+    for(int i = 0; i < 256; i++)
+    {
+        if(hist[i] != 0){
+            result = i;
+            break;
+        }
+    }
+
+    for (int i = 0; i < ksz; i++)
+        hist[m[i][0]]--;
+
+    return result;
+}
+
+Uint8 find_max(Matrix<Uint8>& m, array<int, 256>& hist, bool ns)
+{
+    int ksz = m.size_dim1();
+
+    if (ns)
+    {
+        hist.fill(0);
+
+        for (const auto i : m)
+            hist[i]++;
+    }
+    else {
+        for (int i = 0; i < ksz; i++)
+            hist[m[i][ksz - 1]]++;
+    }
+
+    Uint8 result = 0;
+
+    for(int i = 255; i >= 0; i--)
+    {
+        if(hist[i] != 0){
+            result = i;
+            break;
+        }
+    }
+
+    for (int i = 0; i < ksz; i++)
+        hist[m[i][0]]--;
+
+    return result;
+}
+
+void fillTmpMatrix(Matrix<Uint8>& red, Matrix<Uint8>& green, Matrix<Uint8>& blue, const QImage* img, const int ksz, const int i, const int j)
+{
+    const int width = img->width();
+    const int height = img->height();
+    const int ksz_2 = ksz / 2;
+
+    for (int x = 0; x < ksz; x++)
+    {
+        for (int y = 0; y < ksz; y++)
+        {
+            int posPixX = i - ksz_2 + x;
+            int posPixY = j - ksz_2 + y;
+
+            b_ctrl(posPixX, width);
+            b_ctrl(posPixY, height);
+
+            QRgb tmpc = img->pixel(posPixX, posPixY);
+
+            red[x][y] = qRed(tmpc);
+            green[x][y] = qGreen(tmpc);
+            blue[x][y] = qBlue(tmpc);
+        }
+    }
+}
+
+
+ImageProc::ImageProc(QObject *parent):QObject(parent) {}
 
 void ImageProc::rotate_left(QImage *img)
 {
@@ -222,27 +323,25 @@ void ImageProc::GammaFunc(QImage* img, double c, double d)
     });
 }
 
-void ImageProc::fillTmpMatrix(Matrix<Uint8>& red, Matrix<Uint8>& green, Matrix<Uint8>& blue, const QImage* img, const int ksz, const int i, const int j)
+template<const Index ksz>
+void GaussBlurLoop(QImage* img, SMatrix<double, ksz, ksz>& kernel, const double div,
+                   const int begin_x, const int begin_y, const int end_x, const int end_y)
 {
-    const int width = img->width();
-    const int height = img->height();
-    const int ksz_2 = ksz / 2;
+    Matrix<Uint8> part_r(ksz, ksz);
+    Matrix<Uint8> part_g(ksz, ksz);
+    Matrix<Uint8> part_b(ksz, ksz);
 
-    for (int x = 0; x < ksz; x++)
+    for(int i = begin_x; i < end_x; ++i)
     {
-        for (int y = 0; y < ksz; y++)
+        for(int j = begin_y; j < end_y; ++j)
         {
-            int posPixX = i - ksz_2 + x;
-            int posPixY = j - ksz_2 + y;
+            fillTmpMatrix(part_r, part_g, part_b, img, ksz, i, j);
 
-            b_ctrl(posPixX, width);
-            b_ctrl(posPixY, height);
+            int r = inner_product(part_r.cbegin(), part_r.cend(), kernel.cbegin(), 0.0) / div;
+            int g = inner_product(part_g.cbegin(), part_g.cend(), kernel.cbegin(), 0.0) / div;
+            int b = inner_product(part_b.cbegin(), part_b.cend(), kernel.cbegin(), 0.0) / div;
 
-            QRgb tmpc = img->pixel(posPixX, posPixY);
-
-            red[x][y] = qRed(tmpc);
-            green[x][y] = qGreen(tmpc);
-            blue[x][y] = qBlue(tmpc);
+            img->setPixel(i, j, qRgb(r, g, b));
         }
     }
 }
@@ -254,7 +353,7 @@ void ImageProc::GaussBlur(QImage* img)
 
     const int width = img->width();
     const int height = img->height();
-    const int ksz = 5;
+    constexpr int ksz = 5;
 
     SMatrix<double, ksz, ksz> kernel = {
         0.000789, 0.006581, 0.013347, 0.006581, 0.000789,
@@ -264,23 +363,60 @@ void ImageProc::GaussBlur(QImage* img)
         0.000789, 0.006581, 0.013347, 0.006581, 0.000789
     };
 
+    double div = std::accumulate(kernel.cbegin(), kernel.cend(), 0.0);
+
+//    Matrix<Uint8> part_r(ksz, ksz);
+//    Matrix<Uint8> part_g(ksz, ksz);
+//    Matrix<Uint8> part_b(ksz, ksz);
+
+//    for (int i = 0; i < width; i++)
+//    {
+//        for (int j = 0; j < height; j++)
+//        {
+//            fillTmpMatrix(part_r, part_g, part_b, img, ksz, i, j);
+
+//            int r = inner_product(part_r.cbegin(), part_r.cend(), kernel.cbegin(), 0.0) / div;
+//            int g = inner_product(part_g.cbegin(), part_g.cend(), kernel.cbegin(), 0.0) / div;
+//            int b = inner_product(part_b.cbegin(), part_b.cend(), kernel.cbegin(), 0.0) / div;
+
+//            img->setPixel(i, j, qRgb(r, g, b));
+//        }
+//    }
+
+    auto f1 = std::async(std::launch::async, GaussBlurLoop<ksz>, img, std::ref(kernel), div, 0, 0, width, height / 3);
+    auto f2 = std::async(std::launch::async, GaussBlurLoop<ksz>, img, std::ref(kernel), div, 0, height / 3, width, (height / 3) * 2);
+    auto f3 = std::async(std::launch::async, GaussBlurLoop<ksz>, img, std::ref(kernel), div, 0, (height / 3) * 2, width, height);
+
+    f1.wait();
+    f2.wait();
+    f3.wait();
+}
+
+void MedianFilterLoop(QImage* img, QImage& new_img, const int ksz, const int begin_x, const int begin_y, const int end_x, const int end_y)
+{
     Matrix<Uint8> part_r(ksz, ksz);
     Matrix<Uint8> part_g(ksz, ksz);
     Matrix<Uint8> part_b(ksz, ksz);
 
-    double div = std::accumulate(kernel.cbegin(), kernel.cend(), 0.0);
+    constexpr int szg = 256;
+    array<int, szg> hist_r{ 0 };
+    array<int, szg> hist_g{ 0 };
+    array<int, szg> hist_b{ 0 };
 
-    for (int i = 0; i < width; i++)
+    for (int i = begin_x; i < end_x; ++i)
     {
-        for (int j = 0; j < height; j++)
+        for (int j = begin_y; j < end_y; ++j)
         {
             fillTmpMatrix(part_r, part_g, part_b, img, ksz, i, j);
 
-            int r = inner_product(part_r.cbegin(), part_r.cend(), kernel.cbegin(), 0.0) / div;
-            int g = inner_product(part_g.cbegin(), part_g.cend(), kernel.cbegin(), 0.0) / div;
-            int b = inner_product(part_b.cbegin(), part_b.cend(), kernel.cbegin(), 0.0) / div;
+            bool is_new_line = (j == 0);
 
-            img->setPixel(i, j, qRgb(r, g, b));
+            QRgb tmp = qRgb(find_median(part_r, hist_r, is_new_line),
+                            find_median(part_g, hist_g, is_new_line),
+                            find_median(part_b, hist_b, is_new_line)
+                            );
+
+            new_img.setPixel(i, j, tmp);
         }
     }
 }
@@ -296,36 +432,282 @@ void ImageProc::MedianFilter(QImage* img, const int ksz)
     if (ksz % 2 == 0 || ksz < 3 || ksz > width || ksz > height)
         return;
 
+    QImage new_img(width, height, QImage::Format_RGB32);
+
+    auto f1 = std::async(std::launch::async, MedianFilterLoop, img, std::ref(new_img),
+                         ksz, 0, 0, width / 3, height);
+
+    auto f2 = std::async(std::launch::async, MedianFilterLoop, img, std::ref(new_img),
+                         ksz, width / 3, 0, (width / 3) * 2, height);
+
+    auto f3 = std::async(std::launch::async, MedianFilterLoop, img, std::ref(new_img),
+                         ksz, (width / 3) * 2, 0, width, height);
+
+    f1.wait();
+    f2.wait();
+    f3.wait();
+
+//    Matrix<Uint8> part_r(ksz, ksz);
+//    Matrix<Uint8> part_g(ksz, ksz);
+//    Matrix<Uint8> part_b(ksz, ksz);
+
+//    const int szg = 256;
+//    array<int, szg> hist_r{ 0 };
+//    array<int, szg> hist_g{ 0 };
+//    array<int, szg> hist_b{ 0 };
+
+//    for (int i = 0; i < width; i++)
+//    {
+//        for (int j = 0; j < height; j++)
+//        {
+//            fillTmpMatrix(part_r, part_g, part_b, img, ksz, i, j);
+
+//            bool is_new_line = (j == 0);
+
+//            QRgb tmp = qRgb(find_median(part_r, hist_r, is_new_line),
+//                            find_median(part_g, hist_g, is_new_line),
+//                            find_median(part_b, hist_b, is_new_line)
+//                            );
+
+//            new_img.setPixel(i, j, tmp);
+//        }
+//    }
+
+    *img = move(new_img);
+}
+
+void CustomFilterLoop(QImage* img, QImage& new_img, vector<double>* kernel, const int ksz, const double div,
+                      const int begin_x, const int begin_y, const int end_x, const int end_y)
+{
     Matrix<Uint8> part_r(ksz, ksz);
     Matrix<Uint8> part_g(ksz, ksz);
     Matrix<Uint8> part_b(ksz, ksz);
 
-    const int szg = 256;
+    for (int i = begin_x; i < end_x; i++)
+    {
+        for (int j = begin_y; j < end_y; j++)
+        {
+            fillTmpMatrix(part_r, part_g, part_b, img, ksz, i, j);
+
+            int r = inner_product(part_r.cbegin(), part_r.cend(), kernel->cbegin(), 0.0) / div;
+            int g = inner_product(part_g.cbegin(), part_g.cend(), kernel->cbegin(), 0.0) / div;
+            int b = inner_product(part_b.cbegin(), part_b.cend(), kernel->cbegin(), 0.0) / div;
+
+            QRgb tmpc = qRgb(ovfctrl(r), ovfctrl(g), ovfctrl(b));
+
+            new_img.setPixel(i, j, tmpc);
+        }
+    }
+}
+
+void ImageProc::CustomFilter(QImage *img, vector<double>* kernel)
+{
+    if(img->isNull())
+        return;
+
+    int width = img->width();
+    int height = img->height();
+    const int ksz = static_cast<int>(sqrt(kernel->size()));
+
+    if (ksz % 2 == 0 || ksz < 3 || ksz > width || ksz > height)
+        return;
+
+    const double div = accumulate(kernel->cbegin(), kernel->cend(), 0.0);
+
+    QImage new_img(width, height, QImage::Format_RGB32);
+
+    auto f1 = std::async(std::launch::async, CustomFilterLoop, img, std::ref(new_img), kernel, ksz, div, 0, 0, width / 3, height);
+    auto f2 = std::async(std::launch::async, CustomFilterLoop, img, std::ref(new_img), kernel, ksz, div, width / 3, 0, (width / 3) * 2, height);
+    auto f3 = std::async(std::launch::async, CustomFilterLoop, img, std::ref(new_img), kernel, ksz, div, (width / 3) * 2, 0, width, height);
+
+    f1.wait();
+    f2.wait();
+    f3.wait();
+
+//    Matrix<Uint8> part_r(ksz, ksz);
+//    Matrix<Uint8> part_g(ksz, ksz);
+//    Matrix<Uint8> part_b(ksz, ksz);
+
+//    for (int i = 0; i < width; i++)
+//    {
+//        for (int j = 0; j < height; j++)
+//        {
+//            fillTmpMatrix(part_r, part_g, part_b, img, ksz, i, j);
+
+//            int r = inner_product(part_r.cbegin(), part_r.cend(), kernel->cbegin(), 0.0) / div;
+//            int g = inner_product(part_g.cbegin(), part_g.cend(), kernel->cbegin(), 0.0) / div;
+//            int b = inner_product(part_b.cbegin(), part_b.cend(), kernel->cbegin(), 0.0) / div;
+
+//            QRgb tmpc = qRgb(ovfctrl(r), ovfctrl(g), ovfctrl(b));
+
+//            new_img.setPixel(i, j, tmpc);
+//        }
+//    }
+
+    *img = move(new_img);
+}
+
+void ErosionLoop(QImage* img, QImage& new_img, const int ksz,
+                 const int begin_x, const int begin_y, const int end_x, const int end_y)
+{
+    Matrix<Uint8> part_r(ksz, ksz);
+    Matrix<Uint8> part_g(ksz, ksz);
+    Matrix<Uint8> part_b(ksz, ksz);
+
+    constexpr int szg = 256;
     array<int, szg> hist_r{ 0 };
     array<int, szg> hist_g{ 0 };
     array<int, szg> hist_b{ 0 };
 
-    QImage new_img(width, height, QImage::Format_RGB32);
-
-    for (int i = 0; i < width; i++)
+    for (int i = begin_x; i < end_x; ++i)
     {
-        for (int j = 0; j < height; j++)
+        for (int j = begin_y; j < end_y; ++j)
         {
             fillTmpMatrix(part_r, part_g, part_b, img, ksz, i, j);
 
-            bool is_new_line = (j == 0);
+            bool is_new_s = (j == 0);
 
-            QRgb tmp = qRgb(find_median(part_r, hist_r, is_new_line),
-                            find_median(part_g, hist_g, is_new_line),
-                            find_median(part_b, hist_b, is_new_line)
-                            );
 
-            new_img.setPixel(i, j, tmp);
+            new_img.setPixel(i, j, qRgb(
+                             find_min(part_r, hist_r, is_new_s),
+                             find_min(part_g, hist_g, is_new_s),
+                             find_min(part_b, hist_b, is_new_s)
+                             ));
         }
     }
+}
+
+void ImageProc::Erosion(QImage *img, int ksz)
+{
+    if(img->isNull())
+        return;
+
+    int width = img->width();
+    int height = img->height();
+
+    if (ksz % 2 == 0 || ksz < 3 || ksz > width || ksz > height)
+        return;
+
+    QImage new_img(width, height, QImage::Format_RGB32);
+
+//    Matrix<Uint8> part_r(ksz, ksz);
+//    Matrix<Uint8> part_g(ksz, ksz);
+//    Matrix<Uint8> part_b(ksz, ksz);
+
+//    const int szg = 256;
+//    array<int, szg> hist_r{ 0 };
+//    array<int, szg> hist_g{ 0 };
+//    array<int, szg> hist_b{ 0 };
+
+//    for (int i = 0; i < width; i++)
+//    {
+//        for (int j = 0; j < height; j++)
+//        {
+//            fillTmpMatrix(part_r, part_g, part_b, img, ksz, i, j);
+
+//            bool is_new_s = (j == 0);
+
+
+//            new_img.setPixel(i, j, qRgb(
+//                             find_min(part_r, hist_r, is_new_s),
+//                             find_min(part_g, hist_g, is_new_s),
+//                             find_min(part_b, hist_b, is_new_s)
+//                             ));
+//        }
+//    }
+
+    auto f1 = std::async(std::launch::async, ErosionLoop, img, std::ref(new_img), ksz, 0, 0, width / 3, height);
+    auto f2 = std::async(std::launch::async, ErosionLoop, img, std::ref(new_img), ksz, width / 3, 0, (width / 3) * 2, height);
+    auto f3 = std::async(std::launch::async, ErosionLoop, img, std::ref(new_img), ksz, (width / 3) * 2, 0, width, height);
+
+    f1.wait();
+    f2.wait();
+    f3.wait();
 
     *img = move(new_img);
 }
+
+void IncreaseLoop(QImage* img, QImage& new_img, const int ksz,
+                  const int begin_x, const int begin_y, const int end_x, const int end_y)
+{
+    Matrix<Uint8> part_r(ksz, ksz);
+    Matrix<Uint8> part_g(ksz, ksz);
+    Matrix<Uint8> part_b(ksz, ksz);
+
+    constexpr int szg = 256;
+    array<int, szg> hist_r{ 0 };
+    array<int, szg> hist_g{ 0 };
+    array<int, szg> hist_b{ 0 };
+
+    for (int i = begin_x; i < end_x; ++i)
+    {
+        for (int j = begin_y; j < end_y; ++j)
+        {
+            fillTmpMatrix(part_r, part_g, part_b, img, ksz, i, j);
+
+            bool is_new_s = j == 0;
+
+
+            new_img.setPixel(i, j, qRgb(
+                             find_max(part_r, hist_r, is_new_s),
+                             find_max(part_g, hist_g, is_new_s),
+                             find_max(part_b, hist_b, is_new_s)
+                             ));
+        }
+    }
+}
+
+void ImageProc::Increase(QImage *img, int ksz)
+{
+    if(img->isNull())
+        return;
+
+    int width = img->width();
+    int height = img->height();
+
+    if (ksz % 2 == 0 || ksz < 3 || ksz > width || ksz > height)
+        return;
+
+    QImage new_img(width, height, QImage::Format_RGB32);
+
+//    Matrix<Uint8> part_r(ksz, ksz);
+//    Matrix<Uint8> part_g(ksz, ksz);
+//    Matrix<Uint8> part_b(ksz, ksz);
+
+//    const int szg = 256;
+//    array<int, szg> hist_r{ 0 };
+//    array<int, szg> hist_g{ 0 };
+//    array<int, szg> hist_b{ 0 };
+
+//    for (int i = 0; i < width; i++)
+//    {
+//        for (int j = 0; j < height; j++)
+//        {
+//            fillTmpMatrix(part_r, part_g, part_b, img, ksz, i, j);
+
+//            bool is_new_s = j == 0;
+
+
+//            new_img.setPixel(i, j, qRgb(
+//                             find_max(part_r, hist_r, is_new_s),
+//                             find_max(part_g, hist_g, is_new_s),
+//                             find_max(part_b, hist_b, is_new_s)
+//                             ));
+//        }
+//    }
+
+    auto f1 = std::async(std::launch::async, IncreaseLoop, img, std::ref(new_img), ksz, 0, 0, width / 3, height);
+    auto f2 = std::async(std::launch::async, IncreaseLoop, img, std::ref(new_img), ksz, width / 3, 0, (width / 3) * 2, height);
+    auto f3 = std::async(std::launch::async, IncreaseLoop, img, std::ref(new_img), ksz, (width / 3) * 2, 0, width, height);
+
+    f1.wait();
+    f2.wait();
+    f3.wait();
+
+    *img = move(new_img);
+}
+
+
 
 void ImageProc::MedianFilterGo(QImage *img, const int ksz)
 {
@@ -373,193 +755,6 @@ void ImageProc::VMirrorGo(QImage *img)
 {
     *img = img->mirrored(true, false);
     emit isDone();
-}
-
-void ImageProc::CustomFilter(QImage *img, vector<double>* kernel)
-{
-    if(img->isNull())
-        return;
-
-    int width = img->width();
-    int height = img->height();
-    int ksz = static_cast<int>(sqrt(kernel->size()));
-
-    if (ksz % 2 == 0 || ksz < 3 || ksz > width || ksz > height)
-        return;
-
-    double div = accumulate(kernel->cbegin(), kernel->cend(), 0.0);
-
-    QImage new_img(width, height, QImage::Format_RGB32);
-
-    Matrix<Uint8> part_r(ksz, ksz);
-    Matrix<Uint8> part_g(ksz, ksz);
-    Matrix<Uint8> part_b(ksz, ksz);
-
-    for (int i = 0; i < width; i++)
-    {
-        for (int j = 0; j < height; j++)
-        {
-            fillTmpMatrix(part_r, part_g, part_b, img, ksz, i, j);
-
-            int r = inner_product(part_r.cbegin(), part_r.cend(), kernel->cbegin(), 0.0) / div;
-            int g = inner_product(part_g.cbegin(), part_g.cend(), kernel->cbegin(), 0.0) / div;
-            int b = inner_product(part_b.cbegin(), part_b.cend(), kernel->cbegin(), 0.0) / div;
-
-            QRgb tmpc = qRgb(ovfctrl(r), ovfctrl(g), ovfctrl(b));
-
-            new_img.setPixel(i, j, tmpc);
-        }
-    }
-
-    *img = move(new_img);
-}
-
-Uint8 ImageProc::find_min(Matrix<Uint8>& m, array<int, 256>& hist, bool ns)
-{
-    int ksz = m.size_dim1();
-
-    if (ns)
-    {
-        hist.fill(0);
-
-        for (const auto i : m)
-            hist[i]++;
-    }
-    else {
-        for (int i = 0; i < ksz; i++)
-            hist[m[i][ksz - 1]]++;
-    }
-
-    Uint8 result = 0;
-
-    for(int i = 0; i < 256; i++)
-    {
-        if(hist[i]){
-            result = i;
-            break;
-        }
-    }
-
-    for (int i = 0; i < ksz; i++)
-        hist[m[i][0]]--;
-
-    return result;
-}
-
-void ImageProc::Erosion(QImage *img, int ksz)
-{
-    if(img->isNull())
-        return;
-
-    int width = img->width();
-    int height = img->height();
-
-    if (ksz % 2 == 0 || ksz < 3 || ksz > width || ksz > height)
-        return;
-
-    Matrix<Uint8> part_r(ksz, ksz);
-    Matrix<Uint8> part_g(ksz, ksz);
-    Matrix<Uint8> part_b(ksz, ksz);
-
-    const int szg = 256;
-    array<int, szg> hist_r{ 0 };
-    array<int, szg> hist_g{ 0 };
-    array<int, szg> hist_b{ 0 };
-
-    QImage new_img(width, height, QImage::Format_RGB32);
-
-    for (int i = 0; i < width; i++)
-    {
-        for (int j = 0; j < height; j++)
-        {
-            fillTmpMatrix(part_r, part_g, part_b, img, ksz, i, j);
-
-            bool is_new_s = j == 0;
-
-
-            new_img.setPixel(i, j, qRgb(
-                             find_min(part_r, hist_r, is_new_s),
-                             find_min(part_g, hist_g, is_new_s),
-                             find_min(part_b, hist_b, is_new_s)
-                             ));
-        }
-    }
-
-    *img = move(new_img);
-}
-
-Uint8 ImageProc::find_max(Matrix<Uint8>& m, array<int, 256>& hist, bool ns)
-{
-    int ksz = m.size_dim1();
-
-    if (ns)
-    {
-        hist.fill(0);
-
-        for (const auto i : m)
-            hist[i]++;
-    }
-    else {
-        for (int i = 0; i < ksz; i++)
-            hist[m[i][ksz - 1]]++;
-    }
-
-    Uint8 result = 0;
-
-    for(int i = 255; i >= 0; i--)
-    {
-        if(hist[i]){
-            result = i;
-            break;
-        }
-    }
-
-    for (int i = 0; i < ksz; i++)
-        hist[m[i][0]]--;
-
-    return result;
-}
-
-void ImageProc::Increase(QImage *img, int ksz)
-{
-    if(img->isNull())
-        return;
-
-    int width = img->width();
-    int height = img->height();
-
-    if (ksz % 2 == 0 || ksz < 3 || ksz > width || ksz > height)
-        return;
-
-    Matrix<Uint8> part_r(ksz, ksz);
-    Matrix<Uint8> part_g(ksz, ksz);
-    Matrix<Uint8> part_b(ksz, ksz);
-
-    const int szg = 256;
-    array<int, szg> hist_r{ 0 };
-    array<int, szg> hist_g{ 0 };
-    array<int, szg> hist_b{ 0 };
-
-    QImage new_img(width, height, QImage::Format_RGB32);
-
-    for (int i = 0; i < width; i++)
-    {
-        for (int j = 0; j < height; j++)
-        {
-            fillTmpMatrix(part_r, part_g, part_b, img, ksz, i, j);
-
-            bool is_new_s = j == 0;
-
-
-            new_img.setPixel(i, j, qRgb(
-                             find_max(part_r, hist_r, is_new_s),
-                             find_max(part_g, hist_g, is_new_s),
-                             find_max(part_b, hist_b, is_new_s)
-                             ));
-        }
-    }
-
-    *img = move(new_img);
 }
 
 void ImageProc::GrayWorldGo(QImage *img)

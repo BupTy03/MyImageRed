@@ -3,7 +3,6 @@
 #include <QLineSeries>
 #include <QChartView>
 #include <QValueAxis>
-#include <QDebug>
 
 using namespace QtCharts;
 

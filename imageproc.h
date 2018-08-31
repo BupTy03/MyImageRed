@@ -24,29 +24,8 @@ public:
     explicit ImageProc(QObject* parent = nullptr);
 
 private:
-    template<typename F, typename... Args>
-    void ForEachPixel(MyColorIterator first, MyColorIterator last, F func, Args&&... args)
-    {
-        while(first != last)
-        {
-            *first = func(*first, std::forward<Args>(args)...);
-            first++;
-        }
-    }
-
-    void fillTmpMatrix(Matrix<Uint8> &red, Matrix<Uint8> &green, Matrix<Uint8> &blue, const QImage* img, const int ksz, const int i, const int j);
-
-    static tuple<pair<uchar, uchar>, pair<uchar, uchar>, pair<uchar, uchar>> MinMaxColor(ConstMyColorIterator first, ConstMyColorIterator last);
-    static tuple<ull, ull, ull> ColorSum(ConstMyColorIterator first, ConstMyColorIterator last);
-    static inline Uint8 ovfctrl(const int x) noexcept;
-    static inline int b_ctrl(int& x, const int max) noexcept;
-    static Uint8 find_median(Matrix<Uint8>& m, array<int, 256>& hist, bool ns);
-    static Uint8 find_min(Matrix<Uint8>& m, array<int, 256>& hist, bool ns);
-    static Uint8 find_max(Matrix<Uint8>& m, array<int, 256>& hist, bool ns);
-
     void rotate_left(QImage* img);
     void rotate_right(QImage* img);
-    //void rotate_full(QImage* img);
 
     void GrayWorld(QImage* img);
     void LinearCorr(QImage* img);

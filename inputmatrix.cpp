@@ -1,4 +1,29 @@
 #include "inputmatrix.h"
+#include <iostream>
+
+class MyLineEdit : public QLineEdit
+{
+public:
+    MyLineEdit(QWidget* parent = nullptr) : QLineEdit(parent)
+    {
+        connect(this, &MyLineEdit::editingFinished,
+                [this]()
+                {
+                    if(text() == "")
+                    {
+                        setText("0.0");
+                    }
+                });
+    }
+
+protected:
+    void mousePressEvent(QMouseEvent *e)
+    {
+        this->clear();
+        QLineEdit::mousePressEvent(e);
+    }
+
+};
 
 InputMatrix::InputMatrix(QWidget* pwgt, int kernel_size)
     : QDialog(pwgt, Qt::WindowSystemMenuHint)
@@ -13,11 +38,13 @@ InputMatrix::InputMatrix(QWidget* pwgt, int kernel_size)
 
         for(int j = 0; j < kernel_size; j++)
         {
-            QLineEdit* curr_line = new QLineEdit(this);
+            //QLineEdit* curr_line = new QLineEdit(this);
+            MyLineEdit* curr_line = new MyLineEdit(this);
 
             vec_input.push_back(curr_line);
 
             curr_line->setText("0.0");
+
             curr_line->setFixedWidth(50);
 
             curr_layout->addWidget(curr_line);

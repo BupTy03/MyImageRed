@@ -18,6 +18,7 @@ TARGET = ImageRed
 TEMPLATE = app
 
 QMAKE_CXXFLAGS += -std=c++14
+CONFIG += c++14
 
 # The following define makes your compiler emit warnings if you use
 # any feature of Qt which has been marked as deprecated (the exact warnings
@@ -46,7 +47,8 @@ HEADERS += \
     matrix.h \
     inputmatrix.h \
     imageproc.h \
-    histogram.h
+    histogram.h \
+    timer.h
 
 FORMS += \
         mainwindow.ui

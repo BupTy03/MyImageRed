@@ -40,7 +40,7 @@ public:
     QRgb const& operator*(){ return *p; }
     int operator-(ConstMyColorIterator const& other){ return this->p - other.p; }
     ConstMyColorIterator& operator++() { p++; return *this; }
-    ConstMyColorIterator& operator++(int) { p++; return *this; }
+    ConstMyColorIterator& operator++(int) { auto tmp = *this; p++; return tmp; }
 
     static ConstMyColorIterator CBegin(QImage& img){ return ConstMyColorIterator((QRgb*)img.bits()); }
     static ConstMyColorIterator CEnd(QImage& img) { return ConstMyColorIterator((QRgb*)img.bits() + img.width() * img.height()); }

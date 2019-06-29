@@ -2,6 +2,7 @@
 
 #include <utility>
 #include <future>
+#include <cmath>
 
 #include "timer.h"
 

@@ -17,13 +17,17 @@ public:
     }
 
 protected:
-    void mousePressEvent(QMouseEvent *e)
-    {
-        this->clear();
-        QLineEdit::mousePressEvent(e);
-    }
+    virtual void mousePressEvent(QMouseEvent *e) override;
 
 };
+
+void MyLineEdit::mousePressEvent(QMouseEvent *e)
+{
+    this->clear();
+    QLineEdit::mousePressEvent(e);
+}
+
+
 
 InputMatrix::InputMatrix(QWidget* pwgt, int kernel_size)
     : QDialog(pwgt, Qt::WindowSystemMenuHint)
@@ -31,14 +35,13 @@ InputMatrix::InputMatrix(QWidget* pwgt, int kernel_size)
     this->setLayout(new QVBoxLayout(this));
     this->setWindowTitle("Ввод матрицы свёртки");
 
-    vec_input.reserve(kernel_size * kernel_size);
+    vec_input.reserve(static_cast<std::size_t>(kernel_size * kernel_size));
     for(int i = 0; i < kernel_size; i++)
     {
         QHBoxLayout* curr_layout = new QHBoxLayout();
 
         for(int j = 0; j < kernel_size; j++)
         {
-            //QLineEdit* curr_line = new QLineEdit(this);
             MyLineEdit* curr_line = new MyLineEdit(this);
 
             vec_input.push_back(curr_line);

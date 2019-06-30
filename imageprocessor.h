@@ -1,5 +1,8 @@
-#ifndef IMAGEPROC_H
-#define IMAGEPROC_H
+#ifndef IMAGEPROCESSOR_H
+#define IMAGEPROCESSOR_H
+
+#include "mycoloriterator.h"
+#include "matrix.h"
 
 #include <QObject>
 #include <QImage>
@@ -9,19 +12,16 @@
 #include <memory>
 #include <tuple>
 
-#include "mycoloriterator.h"
-#include "matrix.h"
-
 using ull = unsigned long long;
 using Uint8 = unsigned char;
 
 using namespace std;
 
-class ImageProc : public QObject
+class ImageProcessor : public QObject
 {
     Q_OBJECT
 public:
-    explicit ImageProc(QObject* parent = nullptr);
+    explicit ImageProcessor(QObject* parent = nullptr);
 
 private:
     void rotate_left(QImage* img);
@@ -54,4 +54,4 @@ public slots:
     void VMirrorGo(QImage* img);
 };
 
-#endif // IMAGEPROC_H
+#endif // IMAGEPROCESSOR_H

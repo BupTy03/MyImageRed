@@ -13,8 +13,8 @@ class Histogram : public QDialog
     Q_OBJECT
 public:
     Histogram(const std::array<int, 256>& Red,
-              const std::array<int, 256> &Green,
-              const std::array<int, 256> &Blue,
+              const std::array<int, 256>& Green,
+              const std::array<int, 256>& Blue,
               QWidget* pwgt = nullptr);
 };
 

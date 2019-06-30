@@ -1,8 +1,9 @@
 #ifndef MYCOLORITERATOR_H
 #define MYCOLORITERATOR_H
 
-#include <iterator>
 #include <QImage>
+
+#include <iterator>
 
 class MyColorIterator : public std::iterator<std::input_iterator_tag, uchar>
 {
@@ -14,18 +15,19 @@ public:
     bool operator!=(MyColorIterator const& other) const { return p != other.p; }
     bool operator==(MyColorIterator const& other) const { return p == other.p; }
     QRgb& operator*(){ return *p; }
-    int operator-(MyColorIterator const& other){ return this->p - other.p; }
-    MyColorIterator& operator++() { p++; return *this; }
-    MyColorIterator& operator++(int) { auto tmp = *this; p++; return tmp; }
+    long long operator-(MyColorIterator const& other){ return this->p - other.p; }
+    MyColorIterator operator++() { p++; return *this; }
+    MyColorIterator operator++(int) { auto tmp = *this; p++; return tmp; }
 
-    static MyColorIterator Begin(QImage& img){ return MyColorIterator((QRgb*)img.bits()); }
-    static MyColorIterator End(QImage& img) { return MyColorIterator((QRgb*)img.bits() + img.width() * img.height()); }
+    static MyColorIterator Begin(QImage& img){ return MyColorIterator(reinterpret_cast<QRgb*>(img.bits())); }
+    static MyColorIterator End(QImage& img) { return MyColorIterator(reinterpret_cast<QRgb*>(img.bits()) + img.width() * img.height()); }
 
-    uchar red(){ return qRed(*p); }
-    uchar green() { return qGreen(*p); }
-    uchar blue() { return qBlue(*p); }
+    uchar red(){ return static_cast<uchar>(qRed(*p)); }
+    uchar green() { return static_cast<uchar>(qGreen(*p)); }
+    uchar blue() { return static_cast<uchar>(qBlue(*p)); }
+
 private:
-    QRgb * p = nullptr;
+    QRgb * p{nullptr};
 };
 
 class ConstMyColorIterator : public std::iterator<std::input_iterator_tag, uchar>
@@ -38,16 +40,16 @@ public:
     bool operator!=(ConstMyColorIterator const& other) const { return p != other.p; }
     bool operator==(ConstMyColorIterator const& other) const { return p == other.p; }
     QRgb const& operator*(){ return *p; }
-    int operator-(ConstMyColorIterator const& other){ return this->p - other.p; }
-    ConstMyColorIterator& operator++() { p++; return *this; }
-    ConstMyColorIterator& operator++(int) { auto tmp = *this; p++; return tmp; }
+    long long operator-(ConstMyColorIterator const& other){ return this->p - other.p; }
+    ConstMyColorIterator operator++() { p++; return *this; }
+    ConstMyColorIterator operator++(int) { auto tmp = *this; p++; return tmp; }
 
-    static ConstMyColorIterator CBegin(QImage& img){ return ConstMyColorIterator((QRgb*)img.bits()); }
-    static ConstMyColorIterator CEnd(QImage& img) { return ConstMyColorIterator((QRgb*)img.bits() + img.width() * img.height()); }
+    static ConstMyColorIterator CBegin(QImage& img){ return ConstMyColorIterator(reinterpret_cast<QRgb*>(img.bits())); }
+    static ConstMyColorIterator CEnd(QImage& img) { return ConstMyColorIterator(reinterpret_cast<QRgb*>(img.bits()) + img.width() * img.height()); }
 
-    uchar red(){ return qRed(*p); }
-    uchar green() { return qGreen(*p); }
-    uchar blue() { return qBlue(*p); }
+    uchar red(){ return static_cast<uchar>(qRed(*p)); }
+    uchar green() { return static_cast<uchar>(qGreen(*p)); }
+    uchar blue() { return static_cast<uchar>(qBlue(*p)); }
 private:
     const QRgb* p;
 };

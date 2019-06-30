@@ -38,17 +38,17 @@ SOURCES += \
         main.cpp \
         mainwindow.cpp \
     inputmatrix.cpp \
-    imageproc.cpp \
-    histogram.cpp
+    histogram.cpp \
+    imageprocessor.cpp
 
 HEADERS += \
         mainwindow.h \
     mycoloriterator.h \
     matrix.h \
     inputmatrix.h \
-    imageproc.h \
     histogram.h \
-    timer.h
+    timer.h \
+    imageprocessor.h
 
 FORMS += \
         mainwindow.ui

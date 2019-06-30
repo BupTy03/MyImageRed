@@ -1,10 +1,10 @@
 #ifndef MATRIX_H
 #define MATRIX_H
 
-#include<iostream>
-#include<exception>
-#include<stdexcept>
-#include<string>
+#include <iostream>
+#include <exception>
+#include <stdexcept>
+#include <string>
 
 using Index = long;
 
@@ -36,7 +36,7 @@ public:
             return;
         }
 
-        if(init_list.size() != dm1 * dm2)
+        if(static_cast<int>(init_list.size()) != dm1 * dm2)
             throw invalid_argument{"Invalid argument for constructor SMatrix<T>::SMatrix(std::initializer_list<T>)"};
 
         std::copy(init_list.begin(), init_list.end(), this->begin());
@@ -110,11 +110,11 @@ public:
     using iterator = T*;
     using const_iterator = const T*;
 
-    iterator begin() { return (T*)data; }
-    iterator end() { return (T*)data + dm1 * dm2; }
+    iterator begin() { return reinterpret_cast<T*>(data); }
+    iterator end() { return reinterpret_cast<T*>(data) + dm1 * dm2; }
 
-    const_iterator cbegin() const { return (const T*)data; }
-    const_iterator cend() const { return (const T*)data + dm1 * dm2; }
+    const_iterator cbegin() const { return reinterpret_cast<const T*>(data); }
+    const_iterator cend() const { return reinterpret_cast<const T*>(data) + dm1 * dm2; }
 };
 
 
@@ -123,8 +123,13 @@ using Index = long;
 using namespace std;
 
 struct Matrix_error : std::runtime_error{
-    explicit Matrix_error(const char* q) : std::runtime_error(q){}
-    explicit Matrix_error(string s) : std::runtime_error(s){}
+    explicit Matrix_error(const char* q)
+        : std::runtime_error(q)
+    {}
+
+    explicit Matrix_error(const string& s)
+        : std::runtime_error(s)
+    {}
 };
 
 template<typename T>

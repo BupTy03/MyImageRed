@@ -1,6 +1,11 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include "imageprocessor.h"
+#include "inputmatrix.h"
+#include "matrix.h"
+#include "histogram.h"
+
 #include <QMainWindow>
 #include <QImage>
 #include <QPixmap>
@@ -19,11 +24,6 @@
 #include <memory>
 #include <utility>
 
-#include "imageproc.h"
-#include "inputmatrix.h"
-#include "matrix.h"
-#include "histogram.h"
-
 using namespace std;
 
 namespace Ui {
@@ -37,8 +37,8 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit MainWindow(QWidget *parent = 0);
-    ~MainWindow();
+    explicit MainWindow(QWidget *parent = nullptr);
+    virtual ~MainWindow() override;
 
 private slots:
     void on_SaveBtn_clicked();
@@ -75,11 +75,11 @@ private:
     QStringList::iterator CurrFileIt;
 
     InputMatrix* inMtx;
-    QScopedPointer<ImageProc> imgProc;
+    QScopedPointer<ImageProcessor> imgProc;
     QThread* MyThread;
 
 
-    virtual void resizeEvent(QResizeEvent* e) override;
+    virtual void resizeEvent(QResizeEvent*) override;
 
     void update_pixmap();
     bool loadImage(const QString& str);

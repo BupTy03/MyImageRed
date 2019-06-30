@@ -1,7 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "myimageproc.h"
-#include "imageproc.h"
+#include "imageprocessor.h"
 #include "inputmatrix.h"
 
 #include <algorithm>
@@ -24,7 +24,7 @@ MainWindow::MainWindow(QWidget *parent) :
     TmpIMG.reset(new QImage());
 
     inMtx = new InputMatrix(this);
-    imgProc.reset(new ImageProc());
+    imgProc.reset(new ImageProcessor());
     MyThread = new QThread(this);
 
     connect(this, SIGNAL(destroyed()), MyThread, SLOT(quit()));
@@ -115,12 +115,9 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->ProgressLabel->setText("");
 }
 
-MainWindow::~MainWindow()
-{
-    delete ui;
-}
+MainWindow::~MainWindow() { delete ui; }
 
-void MainWindow::resizeEvent(QResizeEvent* e)
+void MainWindow::resizeEvent(QResizeEvent*)
 {
     update_pixmap();
 }
@@ -382,7 +379,7 @@ void MainWindow::on_IncreaseRadioBtn_toggled(bool checked)
 
 void MainWindow::on_IncreaseSpinBox_valueChanged(int arg1)
 {
-    ui->IncreaseOkBtn->setEnabled(arg1 && arg1 % 2);
+    ui->IncreaseOkBtn->setEnabled(arg1 && (arg1 % 2));
 }
 
 void MainWindow::on_HistogramBtn_clicked()
@@ -403,7 +400,7 @@ void MainWindow::on_HistogramBtn_clicked()
     }
 
     Histogram* hist = new Histogram(arr_valsRed, arr_valsGreen, arr_valsBlue, this);
-
+    QObject::connect(hist, &Histogram::finished, &Histogram::deleteLater);
     hist->show();
 }
 

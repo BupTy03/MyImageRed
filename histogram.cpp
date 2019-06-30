@@ -9,10 +9,12 @@ using namespace QtCharts;
 Histogram::Histogram(const std::array<int, 256>& Red,
                      const std::array<int, 256>& Green,
                      const std::array<int, 256>& Blue,
-                     QWidget *pwgt) : QDialog(pwgt)
+                     QWidget *pwgt)
+    : QDialog(pwgt)
 {
-    this->setMinimumSize(600, 400);
-    this->setLayout(new QGridLayout());
+    setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
+    setMinimumSize(600, 400);
+    setLayout(new QGridLayout());
 
     // Создаём представление графика
     QChartView *chartView = new QChartView(this);
@@ -25,10 +27,10 @@ Histogram::Histogram(const std::array<int, 256>& Red,
     seriesGreen->setColor(qRgb(0, 255, 0));
     seriesBlue->setColor(qRgb(0, 0, 255));
 
-    for(int i = 0; i < 256; ++i){
-        *seriesRed << QPoint(i, Red[i]);
-        *seriesGreen << QPoint(i, Green[i]);
-        *seriesBlue << QPoint(i, Blue[i]);
+    for(std::size_t i = 0; i < 256; ++i){
+        *seriesRed << QPoint(static_cast<int>(i), Red[i]);
+        *seriesGreen << QPoint(static_cast<int>(i), Green[i]);
+        *seriesBlue << QPoint(static_cast<int>(i), Blue[i]);
     }
 
     // Создаём график
@@ -37,7 +39,7 @@ Histogram::Histogram(const std::array<int, 256>& Red,
     chart->addSeries(seriesGreen);
     chart->addSeries(seriesBlue);
 
-    chart->legend()->hide();
+    (chart->legend())->hide();
     chart->setTitle("Гистограмма");
 
     // Настройка осей графика
@@ -56,6 +58,5 @@ Histogram::Histogram(const std::array<int, 256>& Red,
     // Устанавливаем график в представление
     chartView->setChart(chart);
 
-    this->layout()->addWidget(chartView);
-
+    (layout())->addWidget(chartView);
 }

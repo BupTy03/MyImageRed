@@ -18,9 +18,6 @@ using namespace std;
 class InputMatrix : public QDialog
 {
         Q_OBJECT
-private:
-    vector<QLineEdit*> vec_input;
-    QScopedPointer<vector<double>> values;
 
 public:
     InputMatrix(QWidget* pwgt = nullptr, int kernel_size = 7);
@@ -31,6 +28,10 @@ signals:
 
 private slots:
     void checkInputMatrixValues();
+
+private:
+    vector<QLineEdit*> vec_input;
+    QScopedPointer<vector<double>> values;
 };
 
 #endif // INPUTMATRIX_H

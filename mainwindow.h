@@ -2,7 +2,7 @@
 #define MAINWINDOW_H
 
 #include "imageprocessor.h"
-#include "inputmatrix.h"
+#include "inputmatrixdialog.h"
 #include "matrix.h"
 #include "histogram.h"
 
@@ -30,7 +30,15 @@ namespace Ui {
 class MainWindow;
 }
 
-class ImageProc;
+class ImageProcessor;
+
+struct QThreadDeleter {
+    void operator()(QThread* pThread) const {
+        pThread->quit();
+        pThread->wait();
+        delete pThread;
+    }
+};
 
 class MainWindow : public QMainWindow
 {
@@ -68,15 +76,15 @@ private slots:
     void on_QuickSaveBtn_clicked();
 
 private:
-    Ui::MainWindow *ui;
-    QScopedPointer<QImage> MyIMG;
-    QScopedPointer<QImage> TmpIMG;
-    QScopedPointer<QStringList> CurrFileList;
-    QStringList::iterator CurrFileIt;
+    Ui::MainWindow *ui{nullptr};
+    std::unique_ptr<QImage> myIMG_;
+    std::unique_ptr<QImage> tmpIMG_;
+    std::unique_ptr<QStringList> currFileList_;
+    QStringList::iterator currFileIt_;
 
-    InputMatrix* inMtx;
-    QScopedPointer<ImageProcessor> imgProc;
-    QThread* MyThread;
+    InputMatrixDialog* inMtx_;
+    std::unique_ptr<ImageProcessor> imgProc_;
+    std::unique_ptr<QThread, QThreadDeleter> myThread_;
 
 
     virtual void resizeEvent(QResizeEvent*) override;

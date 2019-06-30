@@ -1,5 +1,5 @@
-#ifndef INPUTMATRIX_H
-#define INPUTMATRIX_H
+#ifndef INPUTMATRIXDIALOG_H
+#define INPUTMATRIXDIALOG_H
 
 #include <QDialog>
 #include <QLineEdit>
@@ -15,13 +15,13 @@
 
 using namespace std;
 
-class InputMatrix : public QDialog
+class InputMatrixDialog : public QDialog
 {
         Q_OBJECT
 
 public:
-    InputMatrix(QWidget* pwgt = nullptr, int kernel_size = 7);
-    vector<double>* getValuesPtr();
+    InputMatrixDialog(QWidget* pwgt = nullptr, int kernel_size = 7);
+    std::vector<double>* getValuesPtr();
 
 signals:
     void valuesChecked();
@@ -34,4 +34,4 @@ private:
     QScopedPointer<vector<double>> values;
 };
 
-#endif // INPUTMATRIX_H
+#endif // INPUTMATRIXDIALOG_H

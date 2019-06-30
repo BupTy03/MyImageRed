@@ -1,4 +1,4 @@
-#include "inputmatrix.h"
+#include "inputmatrixdialog.h"
 #include <iostream>
 
 class MyLineEdit : public QLineEdit
@@ -9,7 +9,7 @@ public:
         connect(this, &MyLineEdit::editingFinished,
                 [this]()
                 {
-                    if(text() == "")
+                    if((text()).isEmpty())
                     {
                         setText("0.0");
                     }
@@ -29,7 +29,7 @@ void MyLineEdit::mousePressEvent(QMouseEvent *e)
 
 
 
-InputMatrix::InputMatrix(QWidget* pwgt, int kernel_size)
+InputMatrixDialog::InputMatrixDialog(QWidget* pwgt, int kernel_size)
     : QDialog(pwgt, Qt::WindowSystemMenuHint)
 {
     this->setLayout(new QVBoxLayout(this));
@@ -68,7 +68,7 @@ InputMatrix::InputMatrix(QWidget* pwgt, int kernel_size)
     connect(DialBtns, SIGNAL(accepted()), this, SLOT(checkInputMatrixValues()));
 }
 
-void InputMatrix::checkInputMatrixValues()
+void InputMatrixDialog::checkInputMatrixValues()
 {
     for(const auto& i : vec_input)
     {
@@ -89,7 +89,7 @@ void InputMatrix::checkInputMatrixValues()
     emit valuesChecked();
 }
 
-vector<double>* InputMatrix::getValuesPtr()
+vector<double>* InputMatrixDialog::getValuesPtr()
 {   
     vector<double>* result = new vector<double>(vec_input.size());
 

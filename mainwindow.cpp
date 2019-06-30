@@ -2,7 +2,7 @@
 #include "ui_mainwindow.h"
 #include "myimageproc.h"
 #include "imageprocessor.h"
-#include "inputmatrix.h"
+#include "inputmatrixdialog.h"
 
 #include <algorithm>
 
@@ -13,24 +13,20 @@
 
 using namespace QtCharts;
 
-MainWindow::MainWindow(QWidget *parent) :
-    QMainWindow(parent),
-    ui(new Ui::MainWindow)
+MainWindow::MainWindow(QWidget *parent)
+    : QMainWindow(parent)
+    , ui(new Ui::MainWindow)
+    , myIMG_{std::make_unique<QImage>()}
+    , tmpIMG_{std::make_unique<QImage>()}
+    , inMtx_{new InputMatrixDialog(this)}
+    , imgProc_{std::make_unique<ImageProcessor>()}
+    , myThread_{new QThread}
 {
     ui->setupUi(this);
-    this->setWindowTitle("Обработка изображений");
+    setWindowTitle("Обработка изображений");
 
-    MyIMG.reset(new QImage());
-    TmpIMG.reset(new QImage());
-
-    inMtx = new InputMatrix(this);
-    imgProc.reset(new ImageProcessor());
-    MyThread = new QThread(this);
-
-    connect(this, SIGNAL(destroyed()), MyThread, SLOT(quit()));
-
-    imgProc->moveToThread(MyThread);
-    MyThread->start();
+    imgProc_->moveToThread(myThread_.get());
+    myThread_->start();
 
     ui->SaveBtn->setDisabled(true);
     ui->QuickSaveBtn->setDisabled(true);
@@ -39,19 +35,19 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->RotateLeftBtn->setDisabled(true);
     ui->RotateLeftBtn->setIcon(QIcon(":rotateLeft"));
-    connect(this, SIGNAL(RotateLeftStart(QImage*)), imgProc.data(), SLOT(RotateLeftGo(QImage*)));
+    connect(this, SIGNAL(RotateLeftStart(QImage*)), imgProc_.get(), SLOT(RotateLeftGo(QImage*)));
 
     ui->RotateRightBtn->setDisabled(true);
     ui->RotateRightBtn->setIcon(QIcon(":rotateRight"));
-    connect(this, SIGNAL(RotateRightStart(QImage*)), imgProc.data(), SLOT(RotateRightGo(QImage*)));
+    connect(this, SIGNAL(RotateRightStart(QImage*)), imgProc_.get(), SLOT(RotateRightGo(QImage*)));
 
     ui->HMirroredBtn->setDisabled(true);
     ui->HMirroredBtn->setIcon(QIcon(":HMirror"));
-    connect(this, SIGNAL(HMirrorStart(QImage*)), imgProc.data(), SLOT(HMirrorGo(QImage*)));
+    connect(this, SIGNAL(HMirrorStart(QImage*)), imgProc_.get(), SLOT(HMirrorGo(QImage*)));
 
     ui->VMirroredBtn->setDisabled(true);
     ui->VMirroredBtn->setIcon(QIcon(":VMirror"));
-    connect(this, SIGNAL(VMirrorStart(QImage*)), imgProc.data(), SLOT(VMirrorGo(QImage*)));
+    connect(this, SIGNAL(VMirrorStart(QImage*)), imgProc_.get(), SLOT(VMirrorGo(QImage*)));
 
     ui->PrevBtn->setDisabled(true);
     ui->PrevBtn->setIcon(QIcon(":Prev"));
@@ -60,10 +56,10 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->NextBtn->setIcon(QIcon(":Next"));
 
     ui->LinCorrBtn->setDisabled(true);
-    connect(this, SIGNAL(LinCorrStart(QImage*)), imgProc.data(), SLOT(LinearCorrGo(QImage*)));
+    connect(this, SIGNAL(LinCorrStart(QImage*)), imgProc_.get(), SLOT(LinearCorrGo(QImage*)));
 
     ui->GrayWorldBtn->setDisabled(true);
-    connect(this, SIGNAL(GrayWorldStart(QImage*)), imgProc.data(), SLOT(GrayWorldGo(QImage*)));
+    connect(this, SIGNAL(GrayWorldStart(QImage*)), imgProc_.get(), SLOT(GrayWorldGo(QImage*)));
 
     ui->GammaBtn->setDisabled(true);
     ui->GammaLabel_1->hide();
@@ -74,10 +70,10 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->GammaDSpinBox_2->setMinimum(1);
     ui->GammaOk->setDisabled(true);
     ui->GammaOk->hide();
-    connect(this, SIGNAL(GammaStart(QImage*,double,double)), imgProc.data(), SLOT(GammaFuncGo(QImage*,double,double)));
+    connect(this, SIGNAL(GammaStart(QImage*,double,double)), imgProc_.get(), SLOT(GammaFuncGo(QImage*,double,double)));
 
     ui->GBOkBtn->setDisabled(true);
-    connect(this, SIGNAL(GBStart(QImage*)), imgProc.data(), SLOT(GaussBlurGo(QImage*)));
+    connect(this, SIGNAL(GBStart(QImage*)), imgProc_.get(), SLOT(GaussBlurGo(QImage*)));
 
     ui->MedianBtn->setDisabled(true);
     ui->MedianLabel_1->hide();
@@ -85,10 +81,10 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->MedianSBox->setRange(3, 63);
     ui->MedianSBox->setSingleStep(2);
     ui->MedianOkBtn->hide();
-    connect(this, SIGNAL(MedianStart(QImage*,int)), imgProc.data(), SLOT(MedianFilterGo(QImage*,int)));
+    connect(this, SIGNAL(MedianStart(QImage*,int)), imgProc_.get(), SLOT(MedianFilterGo(QImage*,int)));
 
     ui->CustomBtn->setDisabled(true);
-    connect(this, SIGNAL(CustomStart(QImage*, vector<double>*)), imgProc.data(), SLOT(CustomFilterGo(QImage*, vector<double>*)));
+    connect(this, SIGNAL(CustomStart(QImage*, vector<double>*)), imgProc_.get(), SLOT(CustomFilterGo(QImage*, vector<double>*)));
 
     ui->ErosionRadioBtn->setDisabled(true);
     ui->ErosionSpinBox->setRange(3, 63);
@@ -96,7 +92,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->ErosionLabel->hide();
     ui->ErosionSpinBox->hide();
     ui->ErosionOkBtn->hide();
-    connect(this, SIGNAL(ErosionStart(QImage*,int)), imgProc.data(), SLOT(ErosionGo(QImage*,int)));
+    connect(this, SIGNAL(ErosionStart(QImage*,int)), imgProc_.get(), SLOT(ErosionGo(QImage*,int)));
 
     ui->IncreaseRadioBtn->setDisabled(true);
     ui->IncreaseSpinBox->setRange(3, 63);
@@ -104,11 +100,11 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->IncreaseLabel->hide();
     ui->IncreaseSpinBox->hide();
     ui->IncreaseOkBtn->hide();
-    connect(this, SIGNAL(IncreaseStart(QImage*,int)), imgProc.data(), SLOT(IncreaseGo(QImage*,int)));
+    connect(this, SIGNAL(IncreaseStart(QImage*,int)), imgProc_.get(), SLOT(IncreaseGo(QImage*,int)));
 
-    connect(inMtx, SIGNAL(valuesChecked()), this, SLOT(CustomMatrix()));
+    connect(inMtx_, SIGNAL(valuesChecked()), this, SLOT(CustomMatrix()));
 
-    connect(imgProc.data(), SIGNAL(isDone()), this, SLOT(ProcIsDone()));
+    connect(imgProc_.get(), SIGNAL(isDone()), this, SLOT(ProcIsDone()));
 
     ui->HistogramBtn->setDisabled(true);
 
@@ -124,20 +120,22 @@ void MainWindow::resizeEvent(QResizeEvent*)
 
 void MainWindow::update_pixmap()
 {
-    if(MyIMG->isNull())
+    if(myIMG_->isNull())
         return;
 
-    QPixmap pm = QPixmap::fromImage(*MyIMG);
+    QPixmap pm = QPixmap::fromImage(*myIMG_);
     ui->label->setPixmap(pm.scaled(ui->label->width(), ui->label->height(), Qt::KeepAspectRatio));
 }
 
 bool MainWindow::loadImage(const QString &str)
 {
-    if(!MyIMG->load(str))
+    if(!myIMG_->load(str))
         return false;
 
-    *MyIMG = MyIMG->convertToFormat(QImage::Format_RGB32);
-    *TmpIMG = *MyIMG;
+    if(QImage::Format::Format_RGB32 != myIMG_->format()) {
+        *myIMG_ = myIMG_->convertToFormat(QImage::Format_RGB32);
+    }
+    *tmpIMG_ = *myIMG_;
     update_pixmap();
 
     return true;
@@ -184,7 +182,7 @@ void MainWindow::on_SaveBtn_clicked()
     if(fileName.isEmpty())
         return;
 
-    MyIMG->save(fileName);
+    myIMG_->save(fileName);
     ui->ProgressLabel->setText("Сохранено");
 }
 
@@ -197,13 +195,13 @@ void MainWindow::on_LoadBtn_clicked()
     QDir currDir(fileName);
     currDir.cdUp();
 
-    CurrFileList.reset(new QStringList(currDir.entryList(QDir::Files)));
+    currFileList_ = std::make_unique<QStringList>(currDir.entryList(QDir::Files));
 
-    std::for_each(CurrFileList->begin(), CurrFileList->end(), [&currDir](QString& item){
+    std::for_each(currFileList_->begin(), currFileList_->end(), [&currDir](QString& item){
         item = currDir.path() + '/' + item;
     });
 
-    CurrFileIt = std::find(CurrFileList->begin(), CurrFileList->end(), fileName);
+    currFileIt_ = std::find(currFileList_->begin(), currFileList_->end(), fileName);
 
     ui->GammaBtn->setEnabled(true);
     ui->MedianBtn->setEnabled(true);
@@ -216,7 +214,7 @@ void MainWindow::on_LoadBtn_clicked()
 
 void MainWindow::on_CancelBtn_clicked()
 {
-    *MyIMG = *TmpIMG;
+    *myIMG_ = *tmpIMG_;
     update_pixmap();
     ui->CancelBtn->setDisabled(true);
     ui->ProgressLabel->setText("");
@@ -225,13 +223,13 @@ void MainWindow::on_CancelBtn_clicked()
 void MainWindow::on_LinCorrBtn_clicked()
 {
     StartProcess();
-    emit LinCorrStart(MyIMG.data());
+    emit LinCorrStart(myIMG_.get());
 }
 
 void MainWindow::on_GrayWorldBtn_clicked()
 {
     StartProcess();
-    emit GrayWorldStart(MyIMG.data());
+    emit GrayWorldStart(myIMG_.get());
 }
 
 void MainWindow::on_GammaBtn_toggled(bool checked)
@@ -268,13 +266,13 @@ void MainWindow::on_GammaDSpinBox_2_valueChanged(double arg1)
 void MainWindow::on_GammaOk_clicked()
 {
     StartProcess();
-    emit GammaStart(MyIMG.data(), ui->GammaDSpinBox_1->value(), ui->GammaDSpinBox_2->value());
+    emit GammaStart(myIMG_.get(), ui->GammaDSpinBox_1->value(), ui->GammaDSpinBox_2->value());
 }
 
 void MainWindow::on_GBOkBtn_clicked()
 {
     StartProcess();
-    emit GBStart(MyIMG.data());
+    emit GBStart(myIMG_.get());
 }
 
 void MainWindow::on_MedianBtn_toggled(bool checked)
@@ -302,7 +300,7 @@ void MainWindow::ProcIsDone()
 void MainWindow::on_MedianOkBtn_clicked()
 {
     StartProcess();
-    emit MedianStart(MyIMG.data(), ui->MedianSBox->value());
+    emit MedianStart(myIMG_.get(), ui->MedianSBox->value());
 }
 
 void MainWindow::on_MedianSBox_valueChanged(int arg1)
@@ -313,12 +311,12 @@ void MainWindow::on_MedianSBox_valueChanged(int arg1)
 void MainWindow::CustomMatrix()
 {
     StartProcess();
-    emit CustomStart(MyIMG.data(), inMtx->getValuesPtr());
+    emit CustomStart(myIMG_.get(), inMtx_->getValuesPtr());
 }
 
 void MainWindow::on_CustomBtn_clicked()
 {
-    inMtx->show();
+    inMtx_->show();
 }
 
 void MainWindow::on_Quit_clicked()
@@ -333,7 +331,7 @@ void MainWindow::on_Quit_clicked()
 void MainWindow::on_ErosionOkBtn_clicked()
 {
     StartProcess();
-    emit ErosionStart(MyIMG.data(), ui->ErosionSpinBox->value());
+    emit ErosionStart(myIMG_.get(), ui->ErosionSpinBox->value());
 }
 
 void MainWindow::on_ErosionRadioBtn_toggled(bool checked)
@@ -359,7 +357,7 @@ void MainWindow::on_ErosionSpinBox_valueChanged(int arg1)
 void MainWindow::on_IncreaseOkBtn_clicked()
 {
     StartProcess();
-    emit IncreaseStart(MyIMG.data(), ui->ErosionSpinBox->value());
+    emit IncreaseStart(myIMG_.get(), ui->ErosionSpinBox->value());
 }
 
 void MainWindow::on_IncreaseRadioBtn_toggled(bool checked)
@@ -384,13 +382,13 @@ void MainWindow::on_IncreaseSpinBox_valueChanged(int arg1)
 
 void MainWindow::on_HistogramBtn_clicked()
 {
-    array<int, 256> arr_valsRed = { 0 };
-    array<int, 256> arr_valsGreen = { 0 };
-    array<int, 256> arr_valsBlue = { 0 };
+    HistArray arr_valsRed = { 0 };
+    HistArray arr_valsGreen = { 0 };
+    HistArray arr_valsBlue = { 0 };
 
 
-    auto Cfirst = ConstMyColorIterator::CBegin(*MyIMG);
-    auto Clast = ConstMyColorIterator::CEnd(*MyIMG);
+    auto Cfirst = ConstMyColorIterator::CBegin(*myIMG_);
+    auto Clast = ConstMyColorIterator::CEnd(*myIMG_);
 
     for(; Cfirst != Clast; ++Cfirst)
     {
@@ -407,25 +405,25 @@ void MainWindow::on_HistogramBtn_clicked()
 void MainWindow::on_RotateLeftBtn_clicked()
 {
     StartProcess();
-    emit RotateLeftStart(MyIMG.data());
+    emit RotateLeftStart(myIMG_.get());
 }
 
 void MainWindow::on_RotateRightBtn_clicked()
 {
     StartProcess();
-    emit RotateRightStart(MyIMG.data());
+    emit RotateRightStart(myIMG_.get());
 }
 
 void MainWindow::on_HMirroredBtn_clicked()
 {
     StartProcess();
-    emit HMirrorStart(MyIMG.data());
+    emit HMirrorStart(myIMG_.get());
 }
 
 void MainWindow::on_VMirroredBtn_clicked()
 {
     StartProcess();
-    emit VMirrorStart(MyIMG.data());
+    emit VMirrorStart(myIMG_.get());
 }
 
 bool isImageFormat(const QString& str)
@@ -437,26 +435,26 @@ void MainWindow::on_PrevBtn_clicked()
 {
     EnableAll(false);
 
-    if(CurrFileList.isNull() || CurrFileList->empty())
+    if(currFileList_->empty())
         return;
 
-    auto begin = CurrFileList->begin();
-    auto end = CurrFileList->end();
+    auto begin = currFileList_->begin();
+    auto end = currFileList_->end();
 
-    if(CurrFileIt == begin)
-        CurrFileIt = end;
+    if(currFileIt_ == begin)
+        currFileIt_ = end;
 
-    --CurrFileIt;
+    --currFileIt_;
 
-    while(!isImageFormat(*CurrFileIt))
+    while(!isImageFormat(*currFileIt_))
     {
-        if(CurrFileIt == begin)
+        if(currFileIt_ == begin)
             return;
 
-        --CurrFileIt;
+        --currFileIt_;
     }
 
-    loadImage(*CurrFileIt);
+    loadImage(*currFileIt_);
 
     EnableAll(true);
     ui->ProgressLabel->setText("");
@@ -466,29 +464,29 @@ void MainWindow::on_NextBtn_clicked()
 {
     EnableAll(false);
 
-    if(CurrFileList.isNull() || CurrFileList->empty())
+    if(currFileList_->empty())
         return;
 
-    auto begin = CurrFileList->begin();
-    auto end = CurrFileList->end();
+    auto begin = currFileList_->begin();
+    auto end = currFileList_->end();
 
-    if(CurrFileIt == end)
-        CurrFileIt = begin;
+    if(currFileIt_ == end)
+        currFileIt_ = begin;
     else{
-        ++CurrFileIt;
-        if(CurrFileIt == end)
-            CurrFileIt = begin;
+        ++currFileIt_;
+        if(currFileIt_ == end)
+            currFileIt_ = begin;
     }
 
-    while(!isImageFormat(*CurrFileIt))
+    while(!isImageFormat(*currFileIt_))
     {
-        ++CurrFileIt;
+        ++currFileIt_;
 
-        if(CurrFileIt == end)
+        if(currFileIt_ == end)
             return;
     }
 
-    loadImage(*CurrFileIt);
+    loadImage(*currFileIt_);
 
     EnableAll(true);
     ui->ProgressLabel->setText("Okai");
@@ -496,11 +494,11 @@ void MainWindow::on_NextBtn_clicked()
 
 void MainWindow::on_QuickSaveBtn_clicked()
 {
-    if(MyIMG->isNull() || CurrFileIt == CurrFileList->end())
+    if(myIMG_->isNull() || currFileIt_ == currFileList_->end())
         return;
 
-    MyIMG->save(*CurrFileIt);
-    *TmpIMG = *MyIMG;
+    myIMG_->save(*currFileIt_);
+    *tmpIMG_ = *myIMG_;
     ui->CancelBtn->setDisabled(true);
     ui->ProgressLabel->setText("Сохранено");
 }

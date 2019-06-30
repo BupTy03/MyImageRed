@@ -1,6 +1,8 @@
 #ifndef HISTOGRAM_H
 #define HISTOGRAM_H
 
+#include "imageprocessing.h"
+
 #include <QDialog>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -8,13 +10,15 @@
 
 #include <array>
 
+using namespace image_processing;
+
 class Histogram : public QDialog
 {
     Q_OBJECT
 public:
-    Histogram(const std::array<int, 256>& Red,
-              const std::array<int, 256>& Green,
-              const std::array<int, 256>& Blue,
+    Histogram(const HistArray& Red,
+              const HistArray& Green,
+              const HistArray& Blue,
               QWidget* pwgt = nullptr);
 };
 

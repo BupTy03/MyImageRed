@@ -37,18 +37,19 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
         main.cpp \
         mainwindow.cpp \
-    inputmatrix.cpp \
     histogram.cpp \
-    imageprocessor.cpp
+    imageprocessor.cpp \
+    inputmatrixdialog.cpp
 
 HEADERS += \
         mainwindow.h \
     mycoloriterator.h \
     matrix.h \
-    inputmatrix.h \
     histogram.h \
     timer.h \
-    imageprocessor.h
+    imageprocessor.h \
+    imageprocessing.h \
+    inputmatrixdialog.h
 
 FORMS += \
         mainwindow.ui

@@ -6,10 +6,10 @@
 
 using namespace QtCharts;
 
-Histogram::Histogram(const std::array<int, 256>& Red,
-                     const std::array<int, 256>& Green,
-                     const std::array<int, 256>& Blue,
-                     QWidget *pwgt)
+Histogram::Histogram(const HistArray &Red,
+                     const HistArray &Green,
+                     const HistArray &Blue,
+                     QWidget* pwgt)
     : QDialog(pwgt)
 {
     setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
@@ -17,7 +17,7 @@ Histogram::Histogram(const std::array<int, 256>& Red,
     setLayout(new QGridLayout());
 
     // Создаём представление графика
-    QChartView *chartView = new QChartView(this);
+    QChartView* chartView = new QChartView(this);
 
     QLineSeries* seriesRed = new QLineSeries();
     QLineSeries* seriesGreen = new QLineSeries();
@@ -27,14 +27,14 @@ Histogram::Histogram(const std::array<int, 256>& Red,
     seriesGreen->setColor(qRgb(0, 255, 0));
     seriesBlue->setColor(qRgb(0, 0, 255));
 
-    for(std::size_t i = 0; i < 256; ++i){
-        *seriesRed << QPoint(static_cast<int>(i), Red[i]);
-        *seriesGreen << QPoint(static_cast<int>(i), Green[i]);
-        *seriesBlue << QPoint(static_cast<int>(i), Blue[i]);
+    for(std::size_t i = 0; i < MAX_COLOR; ++i){
+        (*seriesRed) << QPoint(static_cast<int>(i), static_cast<int>(Red[i]));
+        (*seriesGreen) << QPoint(static_cast<int>(i), static_cast<int>(Green[i]));
+        (*seriesBlue) << QPoint(static_cast<int>(i), static_cast<int>(Blue[i]));
     }
 
     // Создаём график
-    QChart *chart = new QChart();
+    QChart* chart = new QChart();
     chart->addSeries(seriesRed);
     chart->addSeries(seriesGreen);
     chart->addSeries(seriesBlue);
@@ -43,13 +43,13 @@ Histogram::Histogram(const std::array<int, 256>& Red,
     chart->setTitle("Гистограмма");
 
     // Настройка осей графика
-    QValueAxis *axisX = new QValueAxis();
+    QValueAxis* axisX = new QValueAxis();
     axisX->setTitleText("интенсивность");
     axisX->setLabelFormat("%i");
     chart->addAxis(axisX, Qt::AlignBottom);
     seriesRed->attachAxis(axisX);
 
-    QValueAxis *axisY = new QValueAxis();
+    QValueAxis* axisY = new QValueAxis();
     axisY->setTitleText("кол-во пикселей");
     axisY->setLabelFormat("%i");
     chart->addAxis(axisY, Qt::AlignLeft);

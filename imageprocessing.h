@@ -4,6 +4,8 @@
 #include "mycoloriterator.h"
 #include "matrix.h"
 
+#include <QThread>
+
 #include <algorithm>
 #include <utility>
 #include <tuple>
@@ -29,16 +31,6 @@ using MinMaxColorTuple = std::tuple<
     MinMaxColorPair,
     MinMaxColorPair
 >;
-
-template<class F, class... Args>
-static void ForEachPixel(MyColorIterator first, MyColorIterator last, F func, Args&&... args)
-{
-    while(first != last)
-    {
-        *first = func(*first, std::forward<Args>(args)...);
-        ++first;
-    }
-}
 
 static void SetMinOrMaxColor(color_t currentColor, MinMaxColorPair& minMaxPair)
 {
@@ -136,7 +128,6 @@ static color_t FindMedian(const ColorMatrix& m, HistArray& hist, const bool newL
 
     return result;
 }
-
 static color_t FindMin(const ColorMatrix& m, HistArray& hist, const bool newLine)
 {
     const int ksz = m.size_dim1();
@@ -167,7 +158,6 @@ static color_t FindMin(const ColorMatrix& m, HistArray& hist, const bool newLine
 
     return result;
 }
-
 static color_t FindMax(const ColorMatrix& m, HistArray& hist, const bool newLine)
 {
     int ksz = m.size_dim1();
@@ -224,12 +214,46 @@ static void FillTmpMatrix(const QImage& img,
     }
 }
 
+/*
+ * Dividing the matrix into countThreads equal parts by width
+ * to perform calculations on them in different threads.
+*/
+template<class Function, class... Args>
+static void ParallelizeMatrixCalculations(
+        const int countThreads,
+        const int heightMatrix, const int widthMatrix,
+        Function&& func, Args&&... args
+        )
+{
+    assert(countThreads > 0);
+    assert(heightMatrix > 0);
+    assert(widthMatrix > 0);
+
+    std::vector<std::future<void>> futures;
+    const int part = widthMatrix / countThreads;
+    for(int i = 1; i <= countThreads; ++i)
+    {
+        futures.push_back(std::async(std::launch::async, std::forward<Function>(func),
+                   0,               // first row
+                   (i - 1) * part,  // first column
+                   widthMatrix,     // last row
+                   i * part,        // last column
+                   std::forward<Args>(args)...
+        ));
+    }
+
+    for(const auto& fut : futures)
+    {
+        fut.wait();
+    }
+}
 
 template<const int kernelSize>
-static void GaussBlurLoopPart(QImage& img, SMatrix<double, kernelSize, kernelSize>& kernel,
-                       const double divider,
-                       const int beginRow, const int beginCol,
-                       const int endRow, const int endCol)
+static void GaussBlurLoopPart(
+        const int beginRow, const int beginCol,
+        const int endRow, const int endCol,
+        QImage& img, SMatrix<double, kernelSize, kernelSize>& kernel,
+        const double divider)
 {
     ColorMatrix partR(kernelSize, kernelSize);
     ColorMatrix partG(kernelSize, kernelSize);
@@ -269,6 +293,10 @@ static void GaussBlur(QImage& img)
 
     double div = std::accumulate(kernel.cbegin(), kernel.cend(), 0.0);
 
+    ParallelizeMatrixCalculations(QThread::idealThreadCount(), height, width,
+                                  GaussBlurLoopPart<ksz>, std::ref(img), std::ref(kernel), div);
+
+/*
     const int heightPart = height / 4;
     const int twoHeightParts = heightPart * 2;
     const int threeHeightParts = heightPart * 3;
@@ -282,12 +310,13 @@ static void GaussBlur(QImage& img)
     f2.wait();
     f3.wait();
     f4.wait();
+*/
 }
 
-static void MedianFilterLoopPart(const QImage& img, QImage& newImg,
-                          const int kernelSize,
-                          const int beginRow, const int beginCol,
-                          const int endRow, const int endCol)
+static void MedianFilterLoopPart(
+        const int beginRow, const int beginCol,
+        const int endRow, const int endCol,
+        const QImage& img, QImage& newImg, const int kernelSize)
 {
     ColorMatrix partR(kernelSize, kernelSize);
     ColorMatrix partG(kernelSize, kernelSize);
@@ -327,6 +356,10 @@ static void MedianFilter(QImage& img, const int kernelSize)
 
     QImage newImg(width, height, QImage::Format_RGB32);
 
+    ParallelizeMatrixCalculations(QThread::idealThreadCount(), height, width,
+                                  MedianFilterLoopPart, std::ref(img), std::ref(newImg), kernelSize);
+
+/*
     const int heightPart = height / 4;
     const int twoHeightParts = heightPart * 2;
     const int threeHeightParts = heightPart * 3;
@@ -340,14 +373,16 @@ static void MedianFilter(QImage& img, const int kernelSize)
     f2.wait();
     f3.wait();
     f4.wait();
-
+*/
     img = move(newImg);
 }
 
-static void CustomFilterLoopPart(const QImage& img, QImage& newImg, const std::vector<double>& kernel,
-                          const int kernelSize, const double divider,
-                          const int beginRow, const int beginCol,
-                          const int endRow, const int endCol)
+static void CustomFilterLoopPart(
+        const int beginRow, const int beginCol,
+        const int endRow, const int endCol,
+        const QImage& img, QImage& newImg, const std::vector<double>& kernel,
+        const int kernelSize, const double divider
+)
 {
     ColorMatrix partR(kernelSize, kernelSize);
     ColorMatrix partG(kernelSize, kernelSize);
@@ -384,6 +419,10 @@ static void CustomFilter(QImage& img, const std::vector<double>& kernel)
 
     const double divider = std::accumulate(kernel.cbegin(), kernel.cend(), 0.0);
 
+    ParallelizeMatrixCalculations(QThread::idealThreadCount(), height, width,
+                                  CustomFilterLoopPart, std::cref(img), std::ref(newImg), std::cref(kernel), kernelSize, divider);
+
+/*
     const int heightPart = height / 4;
     const int twoHeightParts = heightPart * 2;
     const int threeHeightParts = heightPart * 3;
@@ -397,14 +436,15 @@ static void CustomFilter(QImage& img, const std::vector<double>& kernel)
     f2.wait();
     f3.wait();
     f4.wait();
-
+*/
     img = move(newImg);
 }
 
-static void ErosionLoopPart(const QImage& img, QImage& newImg,
-                     const int kernelSize,
-                     const int beginRow, const int beginCol,
-                     const int endRow, const int endCol)
+static void ErosionLoopPart(
+        const int beginRow, const int beginCol,
+        const int endRow, const int endCol,
+        const QImage& img, QImage& newImg, const int kernelSize
+)
 {
     ColorMatrix partR(kernelSize, kernelSize);
     ColorMatrix partG(kernelSize, kernelSize);
@@ -444,6 +484,10 @@ static void Erosion(QImage& img, const int kernelSize)
 
     QImage newImg(width, height, QImage::Format_RGB32);
 
+    ParallelizeMatrixCalculations(QThread::idealThreadCount(), height, width,
+                                  ErosionLoopPart, std::cref(img), std::ref(newImg), kernelSize);
+
+/*
     const int heightPart = height / 4;
     const int twoHeightParts = heightPart * 2;
     const int threeHeightParts = heightPart * 3;
@@ -457,14 +501,15 @@ static void Erosion(QImage& img, const int kernelSize)
     f2.wait();
     f3.wait();
     f4.wait();
-
+*/
     img = move(newImg);
 }
 
-static void IncreaseLoopPart(const QImage& img, QImage& newImg,
-                      const int kernelSize,
-                      const int beginRow, const int beginCol,
-                      const int endRow, const int endCol)
+static void IncreaseLoopPart(
+        const int beginRow, const int beginCol,
+        const int endRow, const int endCol,
+        const QImage& img, QImage& newImg, const int kernelSize
+)
 {
     ColorMatrix partR(kernelSize, kernelSize);
     ColorMatrix partG(kernelSize, kernelSize);
@@ -504,6 +549,9 @@ static void Increase(QImage& img, const int kernelSize)
 
     QImage newImg(width, height, QImage::Format_RGB32);
 
+    ParallelizeMatrixCalculations(QThread::idealThreadCount(), height, width,
+                                  IncreaseLoopPart, std::cref(img), std::ref(newImg), kernelSize);
+/*
     const int heightPart = height / 4;
     const int twoHeightParts = heightPart * 2;
     const int threeHeightParts = heightPart * 3;
@@ -517,7 +565,7 @@ static void Increase(QImage& img, const int kernelSize)
     f2.wait();
     f3.wait();
     f4.wait();
-
+*/
     img = move(newImg);
 }
 

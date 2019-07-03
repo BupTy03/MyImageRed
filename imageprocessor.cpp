@@ -6,16 +6,6 @@
 
 #include "timer.h"
 
-template<typename F, typename... Args>
-void ForEachPixel(MyColorIterator first, MyColorIterator last, F func, Args&&... args)
-{
-    while(first != last)
-    {
-        *first = func(*first, std::forward<Args>(args)...);
-        ++first;
-    }
-}
-
 tuple<pair<uchar, uchar>, pair<uchar, uchar>, pair<uchar, uchar>> MinMaxColor(ConstMyColorIterator first, ConstMyColorIterator last)
 {
     uchar red = first.red();
@@ -256,8 +246,7 @@ void ImageProcessor::LinearCorr(QImage* img)
 
     auto first = MyColorIterator::Begin(*img);
     auto last = MyColorIterator::End(*img);
-
-    ForEachPixel(first, last, [&corr, &mmc, divR, divG, divB](QRgb pixel){
+    std::transform(first, last, first, [&corr, &mmc, divR, divG, divB](auto pixel){
         return qRgb(corr(static_cast<uchar>(qRed(pixel)), get<0>(mmc).first, divR),
                     corr(static_cast<uchar>(qGreen(pixel)), get<1>(mmc).first, divG),
                     corr(static_cast<uchar>(qBlue(pixel)), get<2>(mmc).first, divB));
@@ -288,8 +277,7 @@ void ImageProcessor::GrayWorld(QImage* img)
 
     auto first = MyColorIterator::Begin(*img);
     auto last = MyColorIterator::End(*img);
-
-    ForEachPixel(first, last, [avgR, avgG, avgB](QRgb& pixel){
+    std::transform(first, last, first, [avgR, avgG, avgB](auto pixel){
         return qRgb(ovfctrl(qRed(pixel) * static_cast<int>(avgR)),
                     ovfctrl(qGreen(pixel) * static_cast<int>(avgG)),
                     ovfctrl(qBlue(pixel) * static_cast<int>(avgB)));
@@ -303,7 +291,7 @@ void ImageProcessor::GammaFunc(QImage* img, double c, double d)
 
     auto first = MyColorIterator::Begin(*img);
     auto last = MyColorIterator::End(*img);
-    ForEachPixel(first, last, [c, d](auto pixel){
+    std::transform(first, last, first, [c, d](auto pixel){
         const auto r = ovfctrl(static_cast<int>(round(c * pow(qRed(pixel), d))));
         const auto g = ovfctrl(static_cast<int>(round(c * pow(qGreen(pixel), d))));
         const auto b = ovfctrl(static_cast<int>(round(c * pow(qBlue(pixel), d))));

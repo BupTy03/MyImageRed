@@ -1,0 +1,14 @@
+QPushButton {
+    padding:4px;
+    color: #fff;
+    font-size: 14px;
+    border-radius: 2px;
+    border: 1px solid #3873d9;
+    background-color: qlineargradient( x1: 0, y1: 0, x2: 0, y2: 1,
+                                        stop: 0 #4287ff, stop: 1 #356ccc);
+ }
+QPushButton:pressed {
+    color: #111;
+    border: 1px solid #3873d9;
+    background: #fff;
+ }

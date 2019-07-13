@@ -57,4 +57,5 @@ FORMS += \
 RC_ICONS = icon.ico
 
 RESOURCES += \
-    images.qrc
+    images.qrc \
+    styles.qrc

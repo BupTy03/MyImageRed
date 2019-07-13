@@ -189,6 +189,44 @@ static color_t FindMax(const ColorMatrix& m, HistArray& hist, const bool newLine
     return result;
 }
 
+static void RotateLeft(QImage& img)
+{
+    if(img.isNull())
+        return;
+
+    int width =  img.width();
+    int height = img.height();
+
+    QImage new_img(height, width, QImage::Format_RGB32);
+
+    for (int i = 0; i < width; i++) {
+        for (int j = 0; j < height; j++) {
+            new_img.setPixel(j, width - 1 - i, img.pixel(i, j));
+        }
+    }
+
+    img = move(new_img);
+}
+
+static void RotateRight(QImage& img)
+{
+    if(img.isNull())
+        return;
+
+    int width = img.width();
+    int height = img.height();
+
+    QImage new_img(height, width, QImage::Format_RGB32);
+
+    for (int i = 0; i < width; i++) {
+        for (int j = 0; j < height; j++) {
+            new_img.setPixel(height - 1 - j, i, img.pixel(i, j));
+        }
+    }
+
+    img = move(new_img);
+}
+
 
 static void FillTmpMatrix(const QImage& img,
                    ColorMatrix& red, ColorMatrix& green, ColorMatrix& blue,
@@ -212,6 +250,80 @@ static void FillTmpMatrix(const QImage& img,
             blue[row][col] = static_cast<color_t>(qBlue(tmpc));
         }
     }
+}
+
+static void GrayWorld(QImage& img)
+{
+    if(img.isNull())
+        return;
+
+    auto Cfirst = ConstMyColorIterator::CBegin(img);
+    auto Clast = ConstMyColorIterator::CEnd(img);
+
+    auto summ = ColorSum(Cfirst, Clast);
+
+    const double countPixels = static_cast<double>(img.width() * img.height());
+
+    double avgR = get<0>(summ) / countPixels;
+    double avgG = get<1>(summ) / countPixels;
+    double avgB = get<2>(summ) / countPixels;
+
+    double avgAll = (avgR + avgG + avgB) / 3.0;
+
+    avgR = avgAll / avgR;
+    avgG = avgAll / avgG;
+    avgB = avgAll / avgB;
+
+    auto first = MyColorIterator::Begin(img);
+    auto last = MyColorIterator::End(img);
+    std::transform(first, last, first, [avgR, avgG, avgB](auto pixel){
+        return qRgb(OverflowControl(qRed(pixel) * static_cast<int>(avgR)),
+                    OverflowControl(qGreen(pixel) * static_cast<int>(avgG)),
+                    OverflowControl(qBlue(pixel) * static_cast<int>(avgB)));
+    });
+}
+
+static void LinearCorrection(QImage& img)
+{
+    if(img.isNull())
+        return;
+
+    auto Cfirst = ConstMyColorIterator::CBegin(img);
+    auto Clast = ConstMyColorIterator::CEnd(img);
+
+    auto mmc = MinMaxColor(Cfirst, Clast);
+
+    const double divR = get<0>(mmc).second - get<0>(mmc).first;
+    const double divG = get<1>(mmc).second - get<1>(mmc).first;
+    const double divB = get<2>(mmc).second - get<2>(mmc).first;
+
+    auto corr = [](const uchar curr, const uchar min, const double div){
+        return static_cast<int>((curr - min) * 255.0 / div);
+    };
+
+    auto first = MyColorIterator::Begin(img);
+    auto last = MyColorIterator::End(img);
+    std::transform(first, last, first, [&corr, &mmc, divR, divG, divB](auto pixel){
+        return qRgb(corr(static_cast<uchar>(qRed(pixel)), get<0>(mmc).first, divR),
+                    corr(static_cast<uchar>(qGreen(pixel)), get<1>(mmc).first, divG),
+                    corr(static_cast<uchar>(qBlue(pixel)), get<2>(mmc).first, divB));
+    });
+}
+
+static void GammaFunc(QImage& img, double c, double d)
+{
+    if(img.isNull())
+        return;
+
+    auto first = MyColorIterator::Begin(img);
+    auto last = MyColorIterator::End(img);
+    std::transform(first, last, first, [c, d](auto pixel){
+        const auto r = OverflowControl(static_cast<int>(round(c * pow(qRed(pixel), d))));
+        const auto g = OverflowControl(static_cast<int>(round(c * pow(qGreen(pixel), d))));
+        const auto b = OverflowControl(static_cast<int>(round(c * pow(qBlue(pixel), d))));
+
+        return qRgb(r, g, b);
+    });
 }
 
 /*

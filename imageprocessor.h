@@ -23,6 +23,7 @@ class ImageProcessor : public QObject
 public:
     explicit ImageProcessor(QObject* parent = nullptr);
 
+#if 0
 private:
     void rotate_left(QImage* img);
     void rotate_right(QImage* img);
@@ -35,6 +36,7 @@ private:
     void CustomFilter(QImage* img, vector<double> *kernel);
     void Erosion(QImage* img, int ksz);
     void Increase(QImage* img, int ksz);
+#endif
 
 signals:
     void isDone();

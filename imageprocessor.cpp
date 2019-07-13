@@ -1,10 +1,13 @@
 #include "imageprocessor.h"
+#include "imageprocessing.h"
 
 #include <utility>
 #include <future>
 #include <cmath>
 
 #include "timer.h"
+
+#if 0
 
 tuple<pair<uchar, uchar>, pair<uchar, uchar>, pair<uchar, uchar>> MinMaxColor(ConstMyColorIterator first, ConstMyColorIterator last)
 {
@@ -184,9 +187,13 @@ void fillTmpMatrix(Matrix<Uint8>& red, Matrix<Uint8>& green, Matrix<Uint8>& blue
 }
 
 
+#endif
+
 ImageProcessor::ImageProcessor(QObject *parent)
     : QObject(parent)
 {}
+
+#if 0
 
 void ImageProcessor::rotate_left(QImage *img)
 {
@@ -562,41 +569,47 @@ void ImageProcessor::Increase(QImage *img, int ksz)
     *img = move(new_img);
 }
 
-
+#endif
 
 void ImageProcessor::MedianFilterGo(QImage *img, const int ksz)
 {
-    MedianFilter(img, ksz);
+    image_processing::MedianFilter(*img, ksz);
+    //MedianFilter(img, ksz);
     emit isDone();
 }
 
 void ImageProcessor::CustomFilterGo(QImage *img, vector<double>* kernel)
 {
-    CustomFilter(img, kernel);
+    image_processing::CustomFilter(*img, *kernel);
+    //CustomFilter(img, kernel);
     emit isDone();
 }
 
 void ImageProcessor::ErosionGo(QImage *img, int ksz)
 {
-    Erosion(img, ksz);
+    image_processing::Erosion(*img, ksz);
+    //Erosion(img, ksz);
     emit isDone();
 }
 
 void ImageProcessor::IncreaseGo(QImage *img, int ksz)
 {
-    Increase(img, ksz);
+    image_processing::Increase(*img, ksz);
+    //Increase(img, ksz);
     emit isDone();
 }
 
 void ImageProcessor::RotateLeftGo(QImage* img)
 {
-    rotate_left(img);
+    image_processing::RotateLeft(*img);
+    //rotate_left(img);
     emit isDone();
 }
 
 void ImageProcessor::RotateRightGo(QImage *img)
 {
-    rotate_right(img);
+    image_processing::RotateRight(*img);
+    //rotate_right(img);
     emit isDone();
 }
 
@@ -614,24 +627,28 @@ void ImageProcessor::VMirrorGo(QImage *img)
 
 void ImageProcessor::GrayWorldGo(QImage *img)
 {
-    GrayWorld(img);
+    image_processing::GrayWorld(*img);
+    //GrayWorld(img);
     emit isDone();
 }
 
 void ImageProcessor::LinearCorrGo(QImage *img)
 {
-    LinearCorr(img);
+    image_processing::LinearCorrection(*img);
+    //LinearCorr(img);
     emit isDone();
 }
 
 void ImageProcessor::GammaFuncGo(QImage *img, double c, double d)
 {
-    GammaFunc(img, c, d);
+    image_processing::GammaFunc(*img, c, d);
+    //GammaFunc(img, c, d);
     emit isDone();
 }
 
 void ImageProcessor::GaussBlurGo(QImage *img)
 {
-    GaussBlur(img);
+    image_processing::GaussBlur(*img);
+    //GaussBlur(img);
     emit isDone();
 }

@@ -372,7 +372,7 @@ void MainWindow::on_HistogramBtn_clicked()
         arr_valsBlue[Cfirst.blue()]++;
     }
 
-    Histogram* hist = new Histogram(arr_valsRed, arr_valsGreen, arr_valsBlue, this);
+    auto hist = new Histogram(arr_valsRed, arr_valsGreen, arr_valsBlue, this);
     QObject::connect(hist, &Histogram::finished, &Histogram::deleteLater);
     hist->show();
 }

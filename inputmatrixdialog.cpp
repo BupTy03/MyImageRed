@@ -12,7 +12,7 @@ private slots:
     void onEditingFinished() { if((text()).isEmpty()) setText("0.0"); }
 
 protected:
-    virtual void mousePressEvent(QMouseEvent *e) override;
+    void mousePressEvent(QMouseEvent *e) override;
 };
 
 void MyLineEdit::mousePressEvent(QMouseEvent *e)
@@ -32,11 +32,11 @@ InputMatrixDialog::InputMatrixDialog(QWidget* parent, int kernel_size)
     inputLines_.reserve(static_cast<std::size_t>(kernel_size * kernel_size));
     for(int i = 0; i < kernel_size; i++)
     {
-        QHBoxLayout* curr_layout = new QHBoxLayout();
+        auto curr_layout = new QHBoxLayout();
 
         for(int j = 0; j < kernel_size; j++)
         {
-            MyLineEdit* curr_line = new MyLineEdit(this);
+            auto curr_line = new MyLineEdit(this);
             inputLines_.push_back(curr_line);
 
             curr_line->setText("0.0");

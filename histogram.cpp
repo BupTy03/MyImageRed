@@ -17,11 +17,11 @@ Histogram::Histogram(const HistArray& Red,
     setMinimumSize(600, 400);
     setLayout(new QGridLayout());
 
-    QChartView* chartView = new QChartView(this);
+    auto chartView = new QChartView(this);
 
-    QLineSeries* seriesRed = new QLineSeries();
-    QLineSeries* seriesGreen = new QLineSeries();
-    QLineSeries* seriesBlue = new QLineSeries();
+    auto seriesRed = new QLineSeries();
+    auto seriesGreen = new QLineSeries();
+    auto seriesBlue = new QLineSeries();
 
     seriesRed->setColor(qRgb(255, 0, 0));
     seriesGreen->setColor(qRgb(0, 255, 0));
@@ -34,7 +34,7 @@ Histogram::Histogram(const HistArray& Red,
     }
 
 
-    QChart* chart = new QChart();
+    auto chart = new QChart();
     chart->addSeries(seriesRed);
     chart->addSeries(seriesGreen);
     chart->addSeries(seriesBlue);
@@ -43,13 +43,13 @@ Histogram::Histogram(const HistArray& Red,
     chart->setTitle("Гистограмма");
 
 
-    QValueAxis* axisX = new QValueAxis();
+    auto axisX = new QValueAxis();
     axisX->setTitleText("интенсивность");
     axisX->setLabelFormat("%i");
     chart->addAxis(axisX, Qt::AlignBottom);
     seriesRed->attachAxis(axisX);
 
-    QValueAxis* axisY = new QValueAxis();
+    auto axisY = new QValueAxis();
     axisY->setTitleText("кол-во пикселей");
     axisY->setLabelFormat("%i");
     chart->addAxis(axisY, Qt::AlignLeft);

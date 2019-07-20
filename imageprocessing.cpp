@@ -228,7 +228,7 @@ void GrayWorld(QImage& img)
 
     auto summ = ColorSum(Cfirst, Clast);
 
-    const double countPixels = static_cast<double>(img.width() * img.height());
+    const auto countPixels = static_cast<double>(img.width() * img.height());
 
     double avgR = get<0>(summ) / countPixels;
     double avgG = get<1>(summ) / countPixels;

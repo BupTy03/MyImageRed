@@ -1,41 +1,35 @@
-#include "inputmatrixdialog.h"
-#include <iostream>
+#include "inputmatrixdialog.hpp"
 
 class MyLineEdit : public QLineEdit
 {
 public:
-    MyLineEdit(QWidget* parent = nullptr) : QLineEdit(parent)
+    explicit MyLineEdit(QWidget* parent = nullptr) : QLineEdit(parent)
     {
-        connect(this, &MyLineEdit::editingFinished,
-                [this]()
-                {
-                    if((text()).isEmpty())
-                    {
-                        setText("0.0");
-                    }
-                });
+        QObject::connect(this, &MyLineEdit::editingFinished, this, &MyLineEdit::onEditingFinished);
     }
+
+private slots:
+    void onEditingFinished() { if((text()).isEmpty()) setText("0.0"); }
 
 protected:
     virtual void mousePressEvent(QMouseEvent *e) override;
-
 };
 
 void MyLineEdit::mousePressEvent(QMouseEvent *e)
 {
-    this->clear();
+    clear();
     QLineEdit::mousePressEvent(e);
 }
 
 
 
-InputMatrixDialog::InputMatrixDialog(QWidget* pwgt, int kernel_size)
-    : QDialog(pwgt, Qt::WindowSystemMenuHint)
+InputMatrixDialog::InputMatrixDialog(QWidget* parent, int kernel_size)
+    : QDialog{parent, Qt::WindowSystemMenuHint}
 {
-    this->setLayout(new QVBoxLayout(this));
-    this->setWindowTitle("Ввод матрицы свёртки");
+    setLayout(new QVBoxLayout(this));
+    setWindowTitle(QObject::tr("Ввод матрицы свёртки"));
 
-    vec_input.reserve(static_cast<std::size_t>(kernel_size * kernel_size));
+    inputLines_.reserve(static_cast<std::size_t>(kernel_size * kernel_size));
     for(int i = 0; i < kernel_size; i++)
     {
         QHBoxLayout* curr_layout = new QHBoxLayout();
@@ -43,13 +37,10 @@ InputMatrixDialog::InputMatrixDialog(QWidget* pwgt, int kernel_size)
         for(int j = 0; j < kernel_size; j++)
         {
             MyLineEdit* curr_line = new MyLineEdit(this);
-
-            vec_input.push_back(curr_line);
+            inputLines_.push_back(curr_line);
 
             curr_line->setText("0.0");
-
             curr_line->setFixedWidth(50);
-
             curr_layout->addWidget(curr_line);
 
             if(j != kernel_size - 1){
@@ -57,31 +48,31 @@ InputMatrixDialog::InputMatrixDialog(QWidget* pwgt, int kernel_size)
             }
         }
 
-        this->layout()->addItem(curr_layout);
+        layout()->addItem(curr_layout);
     }
 
-    QDialogButtonBox* DialBtns = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
+    QDialogButtonBox* dialBtns = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
 
-    this->layout()->addWidget(DialBtns);
+    layout()->addWidget(dialBtns);
 
-    connect(DialBtns, SIGNAL(rejected()), this, SLOT(close()));
-    connect(DialBtns, SIGNAL(accepted()), this, SLOT(checkInputMatrixValues()));
+    QObject::connect(dialBtns, &QDialogButtonBox::rejected, this, &QDialogButtonBox::close);
+    QObject::connect(dialBtns, &QDialogButtonBox::accepted, this, &InputMatrixDialog::checkInputMatrixValues);
 }
 
 void InputMatrixDialog::checkInputMatrixValues()
 {
-    for(const auto& i : vec_input)
+    for(const auto line : inputLines_)
     {
-        QString curr_str = i->text();
-        std::replace(curr_str.begin(), curr_str.end(), ',', '.');
-        i->setText(curr_str);
+        QString currStr = line->text();
+        currStr.replace(',', '.');
+        line->setText(currStr);
 
         bool isOk = false;
-        curr_str.toDouble(&isOk);
+        currStr.toDouble(&isOk);
 
         if(!isOk){
-            i->setText("0.0");
-            QMessageBox::information(this, "Ошибка", "Неверный ввод!", QMessageBox::Ok);
+            line->setText("0.0");
+            QMessageBox::information(this, QObject::tr("Ошибка"), QObject::tr("Неверный ввод!"), QMessageBox::Ok);
             return;
         }
     }
@@ -89,20 +80,16 @@ void InputMatrixDialog::checkInputMatrixValues()
     emit valuesChecked();
 }
 
-vector<double>* InputMatrixDialog::getValuesPtr()
+const std::vector<double>& InputMatrixDialog::getValues() const
 {   
-    vector<double>* result = new vector<double>(vec_input.size());
+    values_.clear();
+    values_.reserve(inputLines_.size());
+    std::transform(std::cbegin(inputLines_), std::cend(inputLines_), std::back_inserter(values_),
+    [](const auto line){
+        return (line->text()).toDouble();
+    });
 
-    auto begin_out = vec_input.cbegin();
-    auto end_out = vec_input.cend();
-    auto begin_in = result->begin();
-
-    for(; begin_out != end_out; ++begin_out, ++begin_in)
-        *begin_in = ((*begin_out)->text()).toDouble();
-
-    values.reset(result);
-
-    return values.data();
+    return values_;
 }
 
 

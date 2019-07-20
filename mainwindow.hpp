@@ -1,10 +1,10 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include "imageprocessor.h"
-#include "inputmatrixdialog.h"
-#include "matrix.h"
-#include "histogram.h"
+#include "imageprocessor.hpp"
+#include "inputmatrixdialog.hpp"
+#include "matrix.hpp"
+#include "histogram.hpp"
 
 #include <QMainWindow>
 #include <QImage>
@@ -54,14 +54,14 @@ private slots:
     void on_CancelBtn_clicked();
     void on_LinCorrBtn_clicked();
     void on_GrayWorldBtn_clicked();
-    void on_GammaBtn_toggled(bool checked);
-    void on_GammaDSpinBox_1_valueChanged(double arg1);
-    void on_GammaDSpinBox_2_valueChanged(double arg1);
+    void on_GammaBtn_toggled(const bool checked);
+    void on_GammaDSpinBox_1_valueChanged(const double arg1);
+    void on_GammaDSpinBox_2_valueChanged(const double arg1);
     void on_GammaOk_clicked();
     void on_GBOkBtn_clicked();
-    void on_MedianBtn_toggled(bool checked);
+    void on_MedianBtn_toggled(const bool checked);
     void on_MedianOkBtn_clicked();
-    void on_MedianSBox_valueChanged(int arg1);
+    void on_MedianSBox_valueChanged(const int arg1);
     void on_CustomBtn_clicked();
     void on_ErosionOkBtn_clicked();
     void on_IncreaseOkBtn_clicked();
@@ -86,20 +86,19 @@ private:
     std::unique_ptr<ImageProcessor> imgProc_;
     std::unique_ptr<QThread, QThreadDeleter> myThread_;
 
+    virtual void resizeEvent(QResizeEvent*) override { updatePixmap(); }
 
-    virtual void resizeEvent(QResizeEvent*) override;
-
-    void update_pixmap();
+    void updatePixmap();
     bool loadImage(const QString& str);
     void EnableAll(bool flag);
     void StartProcess();
 
 private slots:
     void CustomMatrix();
-    void on_IncreaseRadioBtn_toggled(bool checked);
-    void on_ErosionRadioBtn_toggled(bool checked);
-    void on_IncreaseSpinBox_valueChanged(int arg1);
-    void on_ErosionSpinBox_valueChanged(int arg1);
+    void on_IncreaseRadioBtn_toggled(const bool checked);
+    void on_ErosionRadioBtn_toggled(const bool checked);
+    void on_IncreaseSpinBox_valueChanged(const int arg1);
+    void on_ErosionSpinBox_valueChanged(const int arg1);
     void ProcIsDone();
 
 signals:
@@ -108,7 +107,7 @@ signals:
     void GammaStart(QImage*, double, double);
     void GBStart(QImage*);
     void MedianStart(QImage*, const int);
-    void CustomStart(QImage*, vector<double>*);
+    void CustomStart(QImage*, const std::vector<double>*);
     void ErosionStart(QImage*, const int);
     void IncreaseStart(QImage*, const int);
     void RotateLeftStart(QImage*);

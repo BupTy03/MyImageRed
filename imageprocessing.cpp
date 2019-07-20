@@ -1,72 +1,38 @@
-#ifndef IMAGEPROCESSING_H
-#define IMAGEPROCESSING_H
-
-#include "mycoloriterator.h"
-#include "matrix.h"
+#include "imageprocessing.hpp"
 
 #include <QThread>
 
 #include <algorithm>
 #include <utility>
-#include <tuple>
-#include <array>
-#include <vector>
 #include <future>
 #include <cmath>
 
-namespace image_processing {
 
-enum { MAX_COLOR = 256 };
-
-using std::int64_t;
-using std::uint64_t;
-
-using color_t = std::uint8_t;
-using ColorMatrix = Matrix<color_t>;
-using HistArray = std::array<std::uint64_t, MAX_COLOR>;
-
-using MinMaxColorPair = std::pair<color_t, color_t>;
-using MinMaxColorTuple = std::tuple<
-    MinMaxColorPair,
-    MinMaxColorPair,
-    MinMaxColorPair
->;
-
-static void SetMinOrMaxColor(color_t currentColor, MinMaxColorPair& minMaxPair)
+static MinMaxColorPair MinMaxColor(color_t currentColor, MinMaxColorPair currentMinMax)
 {
-    if(currentColor < minMaxPair.first)
-        minMaxPair.first = currentColor;
-    else if(currentColor > minMaxPair.second)
-        minMaxPair.second = currentColor;
+    if(currentColor < currentMinMax.first)
+        currentMinMax.first = currentColor;
+    else if(currentColor > currentMinMax.second)
+        currentMinMax.second = currentColor;
+
+    return currentMinMax;
 }
 
 static MinMaxColorTuple MinMaxColor(ConstMyColorIterator first, ConstMyColorIterator last)
 {
-    using std::make_pair;
-
-    color_t red = first.red();
-    color_t green = first.green();
-    color_t blue = first.blue();
+    MinMaxColorPair minmaxRed   = std::make_pair(first.red(), first.red());
+    MinMaxColorPair minmaxGreen = std::make_pair(first.green(), first.green());
+    MinMaxColorPair minmaxBlue  = std::make_pair(first.blue(), first.blue());
     ++first;
 
-    MinMaxColorPair R = make_pair(red, red);
-    MinMaxColorPair G = make_pair(green, green);
-    MinMaxColorPair B = make_pair(blue, blue);
-
-    while(first != last)
+    for(; first != last; ++first)
     {
-        red = first.red();
-        green = first.green();
-        blue = first.blue();
-
-        SetMinOrMaxColor(red, R);
-        SetMinOrMaxColor(green, G);
-        SetMinOrMaxColor(blue, B);
-
-        ++first;
+        minmaxRed   = MinMaxColor(first.red(), minmaxRed);
+        minmaxGreen = MinMaxColor(first.green(), minmaxGreen);
+        minmaxBlue  = MinMaxColor(first.blue(), minmaxBlue);
     }
 
-    return std::make_tuple(R, G, B);
+    return std::make_tuple(minmaxRed, minmaxGreen, minmaxBlue);
 }
 
 static std::tuple<uint64_t, uint64_t, uint64_t> ColorSum(ConstMyColorIterator first, ConstMyColorIterator last)
@@ -77,9 +43,9 @@ static std::tuple<uint64_t, uint64_t, uint64_t> ColorSum(ConstMyColorIterator fi
 
     for(; first != last; ++first)
     {
-        sumRed += first.red();
-        sumGreen += first.green();
-        sumBlue += first.blue();
+        sumRed      += first.red();
+        sumGreen    += first.green();
+        sumBlue     += first.blue();
     }
 
     return std::make_tuple(sumRed, sumGreen, sumBlue);
@@ -189,7 +155,7 @@ static color_t FindMax(const ColorMatrix& m, HistArray& hist, const bool newLine
     return result;
 }
 
-static void RotateLeft(QImage& img)
+void RotateLeft(QImage& img)
 {
     if(img.isNull())
         return;
@@ -208,7 +174,7 @@ static void RotateLeft(QImage& img)
     img = move(new_img);
 }
 
-static void RotateRight(QImage& img)
+void RotateRight(QImage& img)
 {
     if(img.isNull())
         return;
@@ -252,7 +218,7 @@ static void FillTmpMatrix(const QImage& img,
     }
 }
 
-static void GrayWorld(QImage& img)
+void GrayWorld(QImage& img)
 {
     if(img.isNull())
         return;
@@ -283,7 +249,7 @@ static void GrayWorld(QImage& img)
     });
 }
 
-static void LinearCorrection(QImage& img)
+void LinearCorrection(QImage& img)
 {
     if(img.isNull())
         return;
@@ -310,7 +276,7 @@ static void LinearCorrection(QImage& img)
     });
 }
 
-static void GammaFunc(QImage& img, double c, double d)
+void GammaFunc(QImage& img, double c, double d)
 {
     if(img.isNull())
         return;
@@ -386,7 +352,7 @@ static void GaussBlurLoopPart(
     }
 }
 
-static void GaussBlur(QImage& img)
+void GaussBlur(QImage& img)
 {
     if(img.isNull())
         return;
@@ -407,22 +373,6 @@ static void GaussBlur(QImage& img)
 
     ParallelizeMatrixCalculations(QThread::idealThreadCount(), height, width,
                                   GaussBlurLoopPart<ksz>, std::ref(img), std::ref(kernel), div);
-
-/*
-    const int heightPart = height / 4;
-    const int twoHeightParts = heightPart * 2;
-    const int threeHeightParts = heightPart * 3;
-
-    auto f1 = std::async(std::launch::async, GaussBlurLoopPart<ksz>, std::ref(img), std::ref(kernel), div, 0, 0, width, heightPart);
-    auto f2 = std::async(std::launch::async, GaussBlurLoopPart<ksz>, std::ref(img), std::ref(kernel), div, 0, heightPart, width, twoHeightParts);
-    auto f3 = std::async(std::launch::async, GaussBlurLoopPart<ksz>, std::ref(img), std::ref(kernel), div, 0, twoHeightParts, width, threeHeightParts);
-    auto f4 = std::async(std::launch::async, GaussBlurLoopPart<ksz>, std::ref(img), std::ref(kernel), div, 0, threeHeightParts, width, height);
-
-    f1.wait();
-    f2.wait();
-    f3.wait();
-    f4.wait();
-*/
 }
 
 static void MedianFilterLoopPart(
@@ -455,7 +405,7 @@ static void MedianFilterLoopPart(
     }
 }
 
-static void MedianFilter(QImage& img, const int kernelSize)
+void MedianFilter(QImage& img, const int kernelSize)
 {
     if(img.isNull())
         return;
@@ -470,22 +420,6 @@ static void MedianFilter(QImage& img, const int kernelSize)
 
     ParallelizeMatrixCalculations(QThread::idealThreadCount(), height, width,
                                   MedianFilterLoopPart, std::ref(img), std::ref(newImg), kernelSize);
-
-/*
-    const int heightPart = height / 4;
-    const int twoHeightParts = heightPart * 2;
-    const int threeHeightParts = heightPart * 3;
-
-    auto f1 = std::async(std::launch::async, MedianFilterLoopPart, std::ref(img), std::ref(newImg), kernelSize, 0, 0, width, heightPart);
-    auto f2 = std::async(std::launch::async, MedianFilterLoopPart, std::ref(img), std::ref(newImg), kernelSize, 0, heightPart, width, twoHeightParts);
-    auto f3 = std::async(std::launch::async, MedianFilterLoopPart, std::ref(img), std::ref(newImg), kernelSize, 0, twoHeightParts, width, threeHeightParts);
-    auto f4 = std::async(std::launch::async, MedianFilterLoopPart, std::ref(img), std::ref(newImg), kernelSize, 0, threeHeightParts, width, height);
-
-    f1.wait();
-    f2.wait();
-    f3.wait();
-    f4.wait();
-*/
     img = move(newImg);
 }
 
@@ -515,7 +449,7 @@ static void CustomFilterLoopPart(
     }
 }
 
-static void CustomFilter(QImage& img, const std::vector<double>& kernel)
+void CustomFilter(QImage& img, const std::vector<double>& kernel)
 {
     if(img.isNull())
         return;
@@ -533,22 +467,6 @@ static void CustomFilter(QImage& img, const std::vector<double>& kernel)
 
     ParallelizeMatrixCalculations(QThread::idealThreadCount(), height, width,
                                   CustomFilterLoopPart, std::cref(img), std::ref(newImg), std::cref(kernel), kernelSize, divider);
-
-/*
-    const int heightPart = height / 4;
-    const int twoHeightParts = heightPart * 2;
-    const int threeHeightParts = heightPart * 3;
-
-    auto f1 = std::async(std::launch::async, CustomFilterLoopPart, std::cref(img), std::ref(newImg), std::cref(kernel), kernelSize, divider, 0, 0, width, heightPart);
-    auto f2 = std::async(std::launch::async, CustomFilterLoopPart, std::cref(img), std::ref(newImg), std::cref(kernel), kernelSize, divider, 0, heightPart, width, twoHeightParts);
-    auto f3 = std::async(std::launch::async, CustomFilterLoopPart, std::cref(img), std::ref(newImg), std::cref(kernel), kernelSize, divider, 0, twoHeightParts, width, threeHeightParts);
-    auto f4 = std::async(std::launch::async, CustomFilterLoopPart, std::cref(img), std::ref(newImg), std::cref(kernel), kernelSize, divider, 0, threeHeightParts, width, height);
-
-    f1.wait();
-    f2.wait();
-    f3.wait();
-    f4.wait();
-*/
     img = move(newImg);
 }
 
@@ -583,7 +501,7 @@ static void ErosionLoopPart(
     }
 }
 
-static void Erosion(QImage& img, const int kernelSize)
+void Erosion(QImage& img, const int kernelSize)
 {
     if(img.isNull())
         return;
@@ -598,22 +516,6 @@ static void Erosion(QImage& img, const int kernelSize)
 
     ParallelizeMatrixCalculations(QThread::idealThreadCount(), height, width,
                                   ErosionLoopPart, std::cref(img), std::ref(newImg), kernelSize);
-
-/*
-    const int heightPart = height / 4;
-    const int twoHeightParts = heightPart * 2;
-    const int threeHeightParts = heightPart * 3;
-
-    auto f1 = std::async(std::launch::async, ErosionLoopPart, std::cref(img), std::ref(newImg), kernelSize, 0, 0, width, heightPart);
-    auto f2 = std::async(std::launch::async, ErosionLoopPart, std::cref(img), std::ref(newImg), kernelSize, 0, heightPart, width, twoHeightParts);
-    auto f3 = std::async(std::launch::async, ErosionLoopPart, std::cref(img), std::ref(newImg), kernelSize, 0, twoHeightParts, width, threeHeightParts);
-    auto f4 = std::async(std::launch::async, ErosionLoopPart, std::cref(img), std::ref(newImg), kernelSize, 0, threeHeightParts, width, height);
-
-    f1.wait();
-    f2.wait();
-    f3.wait();
-    f4.wait();
-*/
     img = move(newImg);
 }
 
@@ -648,7 +550,7 @@ static void IncreaseLoopPart(
     }
 }
 
-static void Increase(QImage& img, const int kernelSize)
+void Increase(QImage& img, const int kernelSize)
 {
     if(img.isNull())
         return;
@@ -663,24 +565,5 @@ static void Increase(QImage& img, const int kernelSize)
 
     ParallelizeMatrixCalculations(QThread::idealThreadCount(), height, width,
                                   IncreaseLoopPart, std::cref(img), std::ref(newImg), kernelSize);
-/*
-    const int heightPart = height / 4;
-    const int twoHeightParts = heightPart * 2;
-    const int threeHeightParts = heightPart * 3;
-
-    auto f1 = std::async(std::launch::async, IncreaseLoopPart, std::cref(img), std::ref(newImg), kernelSize, 0, 0, width, heightPart);
-    auto f2 = std::async(std::launch::async, IncreaseLoopPart, std::cref(img), std::ref(newImg), kernelSize, 0, heightPart, width, twoHeightParts);
-    auto f3 = std::async(std::launch::async, IncreaseLoopPart, std::cref(img), std::ref(newImg), kernelSize, 0, twoHeightParts, width, threeHeightParts);
-    auto f4 = std::async(std::launch::async, IncreaseLoopPart, std::cref(img), std::ref(newImg), kernelSize, 0, threeHeightParts, width, height);
-
-    f1.wait();
-    f2.wait();
-    f3.wait();
-    f4.wait();
-*/
     img = move(newImg);
 }
-
-} // namespace image_processing
-
-#endif // IMAGEPROCESSING_H

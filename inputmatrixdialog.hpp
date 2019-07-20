@@ -13,15 +13,12 @@
 #include <vector>
 #include <memory>
 
-using namespace std;
-
 class InputMatrixDialog : public QDialog
 {
-        Q_OBJECT
-
+    Q_OBJECT
 public:
-    InputMatrixDialog(QWidget* pwgt = nullptr, int kernel_size = 7);
-    std::vector<double>* getValuesPtr();
+    InputMatrixDialog(QWidget* parent = nullptr, int kernel_size = 7);
+    const std::vector<double>& getValues() const;
 
 signals:
     void valuesChecked();
@@ -30,8 +27,8 @@ private slots:
     void checkInputMatrixValues();
 
 private:
-    vector<QLineEdit*> vec_input;
-    QScopedPointer<vector<double>> values;
+    std::vector<QLineEdit*> inputLines_;
+    mutable std::vector<double> values_;
 };
 
 #endif // INPUTMATRIXDIALOG_H

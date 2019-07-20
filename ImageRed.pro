@@ -39,17 +39,18 @@ SOURCES += \
         mainwindow.cpp \
     histogram.cpp \
     imageprocessor.cpp \
-    inputmatrixdialog.cpp
+    inputmatrixdialog.cpp \
+    imageprocessing.cpp
 
 HEADERS += \
-        mainwindow.h \
-    mycoloriterator.h \
-    matrix.h \
-    histogram.h \
-    timer.h \
-    imageprocessor.h \
-    imageprocessing.h \
-    inputmatrixdialog.h
+    timer.hpp \
+    mycoloriterator.hpp \
+    matrix.hpp \
+    mainwindow.hpp \
+    inputmatrixdialog.hpp \
+    imageprocessor.hpp \
+    imageprocessing.hpp \
+    histogram.hpp
 
 FORMS += \
         mainwindow.ui

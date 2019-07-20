@@ -5,7 +5,9 @@
 
 #include <iterator>
 
-class MyColorIterator : public std::iterator<std::input_iterator_tag, std::uint8_t>
+using color_t = std::uint8_t;
+
+class MyColorIterator : public std::iterator<std::input_iterator_tag, color_t>
 {
 private:
     MyColorIterator(QRgb* p) : p(p) {}
@@ -22,15 +24,15 @@ public:
     static MyColorIterator Begin(QImage& img){ return MyColorIterator(reinterpret_cast<QRgb*>(img.bits())); }
     static MyColorIterator End(QImage& img) { return MyColorIterator(reinterpret_cast<QRgb*>(img.bits()) + img.width() * img.height()); }
 
-    std::uint8_t red(){ return static_cast<std::uint8_t>(qRed(*p)); }
-    std::uint8_t green() { return static_cast<std::uint8_t>(qGreen(*p)); }
-    std::uint8_t blue() { return static_cast<std::uint8_t>(qBlue(*p)); }
+    color_t red(){ return static_cast<color_t>(qRed(*p)); }
+    color_t green() { return static_cast<color_t>(qGreen(*p)); }
+    color_t blue() { return static_cast<color_t>(qBlue(*p)); }
 
 private:
     QRgb * p{nullptr};
 };
 
-class ConstMyColorIterator : public std::iterator<std::input_iterator_tag, std::uint8_t>
+class ConstMyColorIterator : public std::iterator<std::input_iterator_tag, color_t>
 {
 private:
     ConstMyColorIterator(QRgb* p) : p(p) {}
@@ -47,9 +49,9 @@ public:
     static ConstMyColorIterator CBegin(QImage& img){ return ConstMyColorIterator(reinterpret_cast<QRgb*>(img.bits())); }
     static ConstMyColorIterator CEnd(QImage& img) { return ConstMyColorIterator(reinterpret_cast<QRgb*>(img.bits()) + img.width() * img.height()); }
 
-    std::uint8_t red(){ return static_cast<std::uint8_t>(qRed(*p)); }
-    std::uint8_t green() { return static_cast<std::uint8_t>(qGreen(*p)); }
-    std::uint8_t blue() { return static_cast<std::uint8_t>(qBlue(*p)); }
+    color_t red(){ return static_cast<color_t>(qRed(*p)); }
+    color_t green() { return static_cast<color_t>(qGreen(*p)); }
+    color_t blue() { return static_cast<color_t>(qBlue(*p)); }
 private:
     const QRgb* p{nullptr};
 };

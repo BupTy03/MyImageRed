@@ -1,22 +1,22 @@
-#include "histogram.h"
+#include "histogram.hpp"
 
+#include <QGridLayout>
 #include <QLineSeries>
 #include <QChartView>
 #include <QValueAxis>
 
 using namespace QtCharts;
 
-Histogram::Histogram(const HistArray &Red,
-                     const HistArray &Green,
-                     const HistArray &Blue,
-                     QWidget* pwgt)
-    : QDialog(pwgt)
+Histogram::Histogram(const HistArray& Red,
+                     const HistArray& Green,
+                     const HistArray& Blue,
+                     QWidget* parent)
+    : QDialog{parent}
 {
     setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
     setMinimumSize(600, 400);
     setLayout(new QGridLayout());
 
-    // Создаём представление графика
     QChartView* chartView = new QChartView(this);
 
     QLineSeries* seriesRed = new QLineSeries();
@@ -33,7 +33,7 @@ Histogram::Histogram(const HistArray &Red,
         (*seriesBlue) << QPoint(static_cast<int>(i), static_cast<int>(Blue[i]));
     }
 
-    // Создаём график
+
     QChart* chart = new QChart();
     chart->addSeries(seriesRed);
     chart->addSeries(seriesGreen);
@@ -42,7 +42,7 @@ Histogram::Histogram(const HistArray &Red,
     (chart->legend())->hide();
     chart->setTitle("Гистограмма");
 
-    // Настройка осей графика
+
     QValueAxis* axisX = new QValueAxis();
     axisX->setTitleText("интенсивность");
     axisX->setLabelFormat("%i");
@@ -55,8 +55,7 @@ Histogram::Histogram(const HistArray &Red,
     chart->addAxis(axisY, Qt::AlignLeft);
     seriesRed->attachAxis(axisY);
 
-    // Устанавливаем график в представление
-    chartView->setChart(chart);
 
+    chartView->setChart(chart);
     (layout())->addWidget(chartView);
 }

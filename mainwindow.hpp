@@ -54,17 +54,8 @@ private slots:
     void on_CancelBtn_clicked();
     void on_LinCorrBtn_clicked();
     void on_GrayWorldBtn_clicked();
-    void on_GammaBtn_toggled(const bool checked);
-    void on_GammaDSpinBox_1_valueChanged(const double arg1);
-    void on_GammaDSpinBox_2_valueChanged(const double arg1);
-    void on_GammaOk_clicked();
     void on_GBOkBtn_clicked();
-    void on_MedianBtn_toggled(const bool checked);
-    void on_MedianOkBtn_clicked();
-    void on_MedianSBox_valueChanged(const int arg1);
     void on_CustomBtn_clicked();
-    void on_ErosionOkBtn_clicked();
-    void on_IncreaseOkBtn_clicked();
     void on_Quit_clicked();
     void on_HistogramBtn_clicked();
     void on_RotateLeftBtn_clicked();
@@ -75,17 +66,9 @@ private slots:
     void on_NextBtn_clicked();
     void on_QuickSaveBtn_clicked();
 
-private:
-    Ui::MainWindow *ui{nullptr};
-    std::unique_ptr<QImage> myIMG_;
-    std::unique_ptr<QImage> tmpIMG_;
-    std::unique_ptr<QStringList> currFileList_;
-    QStringList::iterator currFileIt_;
-
-    InputMatrixDialog* inMtx_;
-    std::unique_ptr<ImageProcessor> imgProc_;
-    std::unique_ptr<QThread, QThreadDeleter> myThread_;
-
+    // QWidget interface
+protected:
+    virtual void closeEvent(QCloseEvent *event) override;
     virtual void resizeEvent(QResizeEvent*) override { updatePixmap(); }
 
     void updatePixmap();
@@ -95,10 +78,6 @@ private:
 
 private slots:
     void CustomMatrix();
-    void on_IncreaseRadioBtn_toggled(const bool checked);
-    void on_ErosionRadioBtn_toggled(const bool checked);
-    void on_IncreaseSpinBox_valueChanged(const int arg1);
-    void on_ErosionSpinBox_valueChanged(const int arg1);
     void ProcIsDone();
 
 signals:
@@ -114,6 +93,17 @@ signals:
     void RotateRightStart(QImage*);
     void HMirrorStart(QImage*);
     void VMirrorStart(QImage*);
+
+private:
+    Ui::MainWindow *ui{nullptr};
+    std::unique_ptr<QImage> myIMG_;
+    std::unique_ptr<QImage> tmpIMG_;
+    std::unique_ptr<QStringList> currFileList_;
+    QStringList::iterator currFileIt_;
+
+    InputMatrixDialog* inMtx_;
+    std::unique_ptr<ImageProcessor> imgProc_;
+    std::unique_ptr<QThread, QThreadDeleter> myThread_;
 };
 
 #endif // MAINWINDOW_H

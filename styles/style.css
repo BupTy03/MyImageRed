@@ -37,8 +37,8 @@ QMenu::item:selected
 {
     color: #EAEAEA;
     padding: 5px;
-    border-radius: 1px;
-    background: #3e3e3e;
+    border-radius: 2px;
+    background: #222222;/*#3e3e3e;*/
     border: 1px solid #3873d9;
 }
 

@@ -1,11 +1,12 @@
 <RCC>
     <qresource prefix="/">
-        <file alias="rotateLeft">rotate_left.png</file>
-        <file alias="rotateRight">rotate_right.png</file>
-        <file alias="HMirror">HMirror.png</file>
-        <file alias="VMirror">VMirror.png</file>
-        <file alias="Prev">left.png</file>
-        <file alias="Next">right.png</file>
-        <file alias="Save">save.png</file>
+        <file>img/HMirror.png</file>
+        <file>img/icon.ico</file>
+        <file>img/left.png</file>
+        <file>img/right.png</file>
+        <file>img/rotate_left.png</file>
+        <file>img/rotate_right.png</file>
+        <file>img/save.png</file>
+        <file>img/VMirror.png</file>
     </qresource>
 </RCC>

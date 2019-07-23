@@ -314,7 +314,7 @@ static void ParallelizeMatrixCalculations(
         futures.push_back(std::async(std::launch::async, std::forward<Function>(func),
                    0,               // first row
                    (i - 1) * part,  // first column
-                   widthMatrix,     // last row
+                   heightMatrix,     // last row
                    i * part,        // last column
                    std::forward<Args>(args)...
         ));

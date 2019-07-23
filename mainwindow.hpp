@@ -71,6 +71,7 @@ protected:
     virtual void closeEvent(QCloseEvent *event) override;
     virtual void resizeEvent(QResizeEvent*) override { updatePixmap(); }
 
+private:
     void updatePixmap();
     bool loadImage(const QString& str);
     void EnableAll(bool flag);

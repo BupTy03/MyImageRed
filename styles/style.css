@@ -16,6 +16,19 @@ QWidget
     background: #222222;
 }
 
+QMenuBar
+{
+    background: #313131;
+}
+
+QMenuBar::item
+{
+    padding-top: 6px;
+    padding-bottom: 6px;
+    padding-left: 12px;
+    padding-right: 12px;
+}
+
 QMenuBar::item:selected
 {
     color: #EAEAEA;
@@ -25,21 +38,35 @@ QMenuBar::item:selected
 
 QMenu
 {
-    background: #292929;
+    /*background: #292929;*/
+    margin: 0px;
+    background: #2f2f2f;
 }
 
 QMenu::item
 {
-    padding: 4px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    padding-left: 24px;
+    padding-right: 24px;
 }
 
 QMenu::item:selected
 {
-    color: #EAEAEA;
+    padding-right: 0px;
+    background: #1e1e1e;
+    border: 1px solid #3873d9;
+    /*border-bottom: 1px solid #3873d9;*/
+    /*color: #EAEAEA;
     padding: 5px;
     border-radius: 2px;
-    background: #222222;/*#3e3e3e;*/
-    border: 1px solid #3873d9;
+    background: #222222;
+    border: 1px solid #3873d9;*/
+}
+
+QToolBar
+{
+    border: 0px;
 }
 
 QPushButton {

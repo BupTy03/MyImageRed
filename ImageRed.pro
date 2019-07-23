@@ -40,7 +40,8 @@ SOURCES += \
     histogram.cpp \
     imageprocessor.cpp \
     inputmatrixdialog.cpp \
-    imageprocessing.cpp
+    imageprocessing.cpp \
+    fileiterator.cpp
 
 HEADERS += \
     timer.hpp \
@@ -50,7 +51,8 @@ HEADERS += \
     inputmatrixdialog.hpp \
     imageprocessor.hpp \
     imageprocessing.hpp \
-    histogram.hpp
+    histogram.hpp \
+    fileiterator.hpp
 
 FORMS += \
         mainwindow.ui

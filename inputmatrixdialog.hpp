@@ -18,13 +18,13 @@ class InputMatrixDialog : public QDialog
     Q_OBJECT
 public:
     InputMatrixDialog(QWidget* parent = nullptr, int kernel_size = 7);
-    const std::vector<double>& getValues() const;
+    const std::vector<double>& GetValues() const;
 
 signals:
-    void valuesChecked();
+    void ValuesChecked();
 
 private slots:
-    void checkInputMatrixValues();
+    void CheckInputMatrixValues();
 
 private:
     std::vector<QLineEdit*> inputLines_;

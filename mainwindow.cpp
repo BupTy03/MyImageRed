@@ -16,74 +16,75 @@ using namespace QtCharts;
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
-    , myIMG_{std::make_unique<QImage>()}
-    , tmpIMG_{std::make_unique<QImage>()}
-    , inMtx_{new InputMatrixDialog(this)}
-    , imgProc_{std::make_unique<ImageProcessor>()}
+    , inputMatrixDialog_{new InputMatrixDialog(this)}
+    , imageProcessor_{std::make_unique<ImageProcessor>()}
     , myThread_{new QThread}
 {
     ui->setupUi(this);
-    setWindowTitle("Обработка изображений");
+    setWindowTitle(QObject::tr("Обработка изображений"));
 
-    QObject::connect(imgProc_.get(), &ImageProcessor::isDone, this, &MainWindow::ProcIsDone);
-    QObject::connect(this, &MainWindow::RotateLeftStart,    imgProc_.get(), &ImageProcessor::RotateLeftGo);
-    QObject::connect(this, &MainWindow::RotateRightStart,   imgProc_.get(), &ImageProcessor::RotateRightGo);
-    QObject::connect(this, &MainWindow::HMirrorStart,       imgProc_.get(), &ImageProcessor::HMirrorGo);
-    QObject::connect(this, &MainWindow::VMirrorStart,       imgProc_.get(), &ImageProcessor::VMirrorGo);
-    QObject::connect(this, &MainWindow::LinCorrStart,       imgProc_.get(), &ImageProcessor::LinearCorrGo);
-    QObject::connect(this, &MainWindow::GrayWorldStart,     imgProc_.get(), &ImageProcessor::GrayWorldGo);
-    QObject::connect(this, &MainWindow::GammaStart,         imgProc_.get(), &ImageProcessor::GammaFuncGo);
-    QObject::connect(this, &MainWindow::GBStart,            imgProc_.get(), &ImageProcessor::GaussBlurGo);
-    QObject::connect(this, &MainWindow::MedianStart,        imgProc_.get(), &ImageProcessor::MedianFilterGo);
-    QObject::connect(this, &MainWindow::CustomStart,        imgProc_.get(), &ImageProcessor::CustomFilterGo);
-    QObject::connect(this, &MainWindow::ErosionStart,       imgProc_.get(), &ImageProcessor::ErosionGo);
-    QObject::connect(this, &MainWindow::IncreaseStart,      imgProc_.get(), &ImageProcessor::IncreaseGo);
+    QObject::connect(imageProcessor_.get(), &ImageProcessor::isDone, this, &MainWindow::ProcIsDone);
+    QObject::connect(this, &MainWindow::RotateLeftStart,        imageProcessor_.get(), &ImageProcessor::RotateLeftGo);
+    QObject::connect(this, &MainWindow::RotateRightStart,       imageProcessor_.get(), &ImageProcessor::RotateRightGo);
+    QObject::connect(this, &MainWindow::HMirrorStart,           imageProcessor_.get(), &ImageProcessor::HMirrorGo);
+    QObject::connect(this, &MainWindow::VMirrorStart,           imageProcessor_.get(), &ImageProcessor::VMirrorGo);
+    QObject::connect(this, &MainWindow::LinearCorrectionStart,  imageProcessor_.get(), &ImageProcessor::LinearCorrGo);
+    QObject::connect(this, &MainWindow::GrayWorldStart,         imageProcessor_.get(), &ImageProcessor::GrayWorldGo);
+    QObject::connect(this, &MainWindow::GammaStart,             imageProcessor_.get(), &ImageProcessor::GammaFuncGo);
+    QObject::connect(this, &MainWindow::GaussBlurStart,         imageProcessor_.get(), &ImageProcessor::GaussBlurGo);
+    QObject::connect(this, &MainWindow::MedianStart,            imageProcessor_.get(), &ImageProcessor::MedianFilterGo);
+    QObject::connect(this, &MainWindow::CustomStart,            imageProcessor_.get(), &ImageProcessor::CustomFilterGo);
+    QObject::connect(this, &MainWindow::ErosionStart,           imageProcessor_.get(), &ImageProcessor::ErosionGo);
+    QObject::connect(this, &MainWindow::IncreaseStart,          imageProcessor_.get(), &ImageProcessor::IncreaseGo);
 
-    imgProc_->moveToThread(myThread_.get());
+    imageProcessor_->moveToThread(myThread_.get());
     myThread_->start();
 
-    QObject::connect(ui->actionExit,        &QAction::triggered, this, &MainWindow::on_Quit_clicked);
-    QObject::connect(ui->actionSave,        &QAction::triggered, this, &MainWindow::on_QuickSaveBtn_clicked);
-    QObject::connect(ui->actionSaveAs,      &QAction::triggered, this, &MainWindow::on_SaveBtn_clicked);
-    QObject::connect(ui->actionCancel,      &QAction::triggered, this, &MainWindow::on_CancelBtn_clicked);
-    QObject::connect(ui->actionOpenFile,    &QAction::triggered, this, &MainWindow::on_LoadBtn_clicked);
+    QObject::connect(ui->actionExit,        &QAction::triggered, this, &MainWindow::close);
+    QObject::connect(ui->actionSave,        &QAction::triggered, this, &MainWindow::OnActionQuickSave);
+    QObject::connect(ui->actionSaveAs,      &QAction::triggered, this, &MainWindow::OnActionSave);
+    QObject::connect(ui->actionCancel,      &QAction::triggered, this, &MainWindow::OnActionCancel);
+    QObject::connect(ui->actionOpenFile,    &QAction::triggered, this, &MainWindow::OnActionLoad);
 
-    QObject::connect(ui->actionGaussBlur,               &QAction::triggered, this, &MainWindow::on_GBOkBtn_clicked);
-    QObject::connect(ui->actionGrayWorld,               &QAction::triggered, this, &MainWindow::on_GrayWorldBtn_clicked);
-    QObject::connect(ui->actionLinearCorrection,        &QAction::triggered, this, &MainWindow::on_LinCorrBtn_clicked);
-    QObject::connect(ui->actionSetConvolutionMatrix,    &QAction::triggered, this, &MainWindow::on_CustomBtn_clicked);
-    QObject::connect(ui->actionHistogram,               &QAction::triggered, this, &MainWindow::on_HistogramBtn_clicked);
+    QObject::connect(ui->PrevBtn, &QPushButton::clicked, this, &MainWindow::OnButtonPrev);
+    QObject::connect(ui->NextBtn, &QPushButton::clicked, this, &MainWindow::OnButtonNext);
 
-    QObject::connect(inMtx_, &InputMatrixDialog::valuesChecked, this, &MainWindow::CustomMatrix);
+    QObject::connect(ui->actionGaussBlur,               &QAction::triggered, this, &MainWindow::OnActionGaussBlur);
+    QObject::connect(ui->actionGrayWorld,               &QAction::triggered, this, &MainWindow::OnActionGrayWorld);
+    QObject::connect(ui->actionLinearCorrection,        &QAction::triggered, this, &MainWindow::OnActionLinearCorrection);
+    QObject::connect(ui->actionSetConvolutionMatrix,    &QAction::triggered, this, &MainWindow::OnActionCustom);
+    QObject::connect(ui->actionHistogram,               &QAction::triggered, this, &MainWindow::OnActionHistogram);
+
+    QObject::connect(inputMatrixDialog_, &InputMatrixDialog::ValuesChecked, this, &MainWindow::OnCustomMatrix);
 }
 
 MainWindow::~MainWindow() { delete ui; }
 
 
-void MainWindow::updatePixmap()
+void MainWindow::UpdatePixmap()
 {
-    if(myIMG_->isNull())
+    if(myIMG_.isNull())
         return;
 
-    QPixmap pm = QPixmap::fromImage(*myIMG_);
+    QPixmap pm = QPixmap::fromImage(myIMG_);
     ui->label->setPixmap(pm.scaled(ui->label->width(), ui->label->height(), Qt::KeepAspectRatio));
 }
 
-bool MainWindow::loadImage(const QString &str)
+bool MainWindow::LoadImage(const QString &str)
 {
-    if(!myIMG_->load(str))
+    if(!myIMG_.load(str))
         return false;
 
-    if(QImage::Format::Format_RGB32 != myIMG_->format()) {
-        *myIMG_ = myIMG_->convertToFormat(QImage::Format_RGB32);
+    if(QImage::Format::Format_RGB32 != myIMG_.format()) {
+        myIMG_ = myIMG_.convertToFormat(QImage::Format_RGB32);
     }
-    *tmpIMG_ = *myIMG_;
-    updatePixmap();
+    tmpIMG_ = myIMG_;
+    UpdatePixmap();
 
     return true;
 }
 
-void MainWindow::EnableAll(const bool flag)
+void MainWindow::EnableAll(bool flag)
 {
     ui->HMirroredBtn->setEnabled(flag);
     ui->NextBtn->setEnabled(flag);
@@ -100,92 +101,103 @@ void MainWindow::StartProcess()
     EnableAll(false);
 }
 
-void MainWindow::on_SaveBtn_clicked()
+void MainWindow::OnActionSave()
 {
     const QString fileName = QFileDialog::getSaveFileName(this, QObject::tr("Сохранить как"), QDir::currentPath(), QObject::tr("*.jpg *.jpeg *.png *.bmp"));
     if(fileName.isEmpty())
         return;
 
-    myIMG_->save(fileName);
+    myIMG_.save(fileName);
     ui->ProgressLabel->setText(QObject::tr("Сохранено"));
 }
 
-void MainWindow::on_LoadBtn_clicked()
+static bool isImageFormat(const QString& str)
+{
+    return str.endsWith(".jpg") || str.endsWith(".jpeg") || str.endsWith(".bmp") || str.endsWith(".png");
+}
+
+void MainWindow::OnActionLoad()
 {
     const QString fileName = QFileDialog::getOpenFileName(this, QObject::tr("Открыть файл"), "/", "*.jpg *.jpeg *.png *.bmp");
-    loadImage(fileName);
+    if(fileName.isEmpty()) {
+        return;
+    }
 
-    QDir currDir(fileName);
-    currDir.cdUp();
+    fileIterator_.LoadFile(fileName);
+    fileIterator_.FilterFiles(isImageFormat);
 
-    currFileList_ = std::make_unique<QStringList>(currDir.entryList(QDir::Files));
-    std::transform(currFileList_->cbegin(), currFileList_->cend(), currFileList_->begin(),
-    [&currDir](const auto& item){
-        return currDir.path() + '/' + item;
-    });
+    if(!fileIterator_.HasFiles()) {
+        return;
+    }
 
-    currFileIt_ = std::find(currFileList_->begin(), currFileList_->end(), fileName);
+    LoadImage(fileIterator_.Next());
+
+//    LoadImage(fileName);
+
+//    QDir currDir(fileName);
+//    currDir.cdUp();
+
+//    currFileList_ = std::make_unique<QStringList>(currDir.entryList(QDir::Files));
+//    std::transform(currFileList_->cbegin(), currFileList_->cend(), currFileList_->begin(),
+//    [&currDir](const auto& item){
+//        return currDir.path() + '/' + item;
+//    });
+
+//    currFileIt_ = std::find(currFileList_->begin(), currFileList_->end(), fileName);
 
     EnableAll(true);
     ui->ProgressLabel->setText("");
 }
 
-void MainWindow::on_CancelBtn_clicked()
+void MainWindow::OnActionCancel()
 {
-    *myIMG_ = *tmpIMG_;
-    updatePixmap();
+    myIMG_ = tmpIMG_;
+    UpdatePixmap();
     ui->ProgressLabel->setText("");
 }
 
-void MainWindow::on_LinCorrBtn_clicked()
+void MainWindow::OnActionLinearCorrection()
 {
     StartProcess();
-    emit LinCorrStart(myIMG_.get());
+    emit LinearCorrectionStart(&myIMG_);
 }
 
-void MainWindow::on_GrayWorldBtn_clicked()
+void MainWindow::OnActionGrayWorld()
 {
     StartProcess();
-    emit GrayWorldStart(myIMG_.get());
+    emit GrayWorldStart(&myIMG_);
 }
 
 
-void MainWindow::on_GBOkBtn_clicked()
+void MainWindow::OnActionGaussBlur()
 {
     StartProcess();
-    emit GBStart(myIMG_.get());
+    emit GaussBlurStart(&myIMG_);
 }
 
 void MainWindow::ProcIsDone()
 {
     EnableAll(true);
-    updatePixmap();
+    UpdatePixmap();
     ui->ProgressLabel->setText(QObject::tr("Готово"));
 }
 
-void MainWindow::CustomMatrix()
+void MainWindow::OnCustomMatrix()
 {
     StartProcess();
-    emit CustomStart(myIMG_.get(), &(inMtx_->getValues()));
+    emit CustomStart(&myIMG_, &(inputMatrixDialog_->GetValues()));
 }
 
-void MainWindow::on_CustomBtn_clicked() { inMtx_->show(); }
+void MainWindow::OnActionCustom() { inputMatrixDialog_->show(); }
 
-void MainWindow::on_Quit_clicked()
-{
-    close();
-}
-
-
-
-void MainWindow::on_HistogramBtn_clicked()
+void MainWindow::OnActionHistogram()
 {
     HistArray arr_valsRed   = { 0 };
     HistArray arr_valsGreen = { 0 };
     HistArray arr_valsBlue  = { 0 };
 
-    auto Cfirst = ConstMyColorIterator::CBegin(*myIMG_);
-    auto Clast = ConstMyColorIterator::CEnd(*myIMG_);
+    auto Cfirst = ConstMyColorIterator::CBegin(myIMG_);
+    auto Clast = ConstMyColorIterator::CEnd(myIMG_);
 
     for(; Cfirst != Clast; ++Cfirst)
     {
@@ -199,103 +211,112 @@ void MainWindow::on_HistogramBtn_clicked()
     hist->show();
 }
 
-void MainWindow::on_RotateLeftBtn_clicked()
+void MainWindow::OnActionRotateLeft()
 {
     StartProcess();
-    emit RotateLeftStart(myIMG_.get());
+    emit RotateLeftStart(&myIMG_);
 }
 
-void MainWindow::on_RotateRightBtn_clicked()
+void MainWindow::OnActionRotateRight()
 {
     StartProcess();
-    emit RotateRightStart(myIMG_.get());
+    emit RotateRightStart(&myIMG_);
 }
 
-void MainWindow::on_HMirroredBtn_clicked()
+void MainWindow::OnActionHMirrored()
 {
     StartProcess();
-    emit HMirrorStart(myIMG_.get());
+    emit HMirrorStart(&myIMG_);
 }
 
-void MainWindow::on_VMirroredBtn_clicked()
+void MainWindow::OnActionVMirrored()
 {
     StartProcess();
-    emit VMirrorStart(myIMG_.get());
+    emit VMirrorStart(&myIMG_);
 }
 
-bool isImageFormat(const QString& str)
-{
-    return str.endsWith(".jpg") || str.endsWith(".jpeg") || str.endsWith(".bmp") || str.endsWith(".png");
-}
-
-void MainWindow::on_PrevBtn_clicked()
+void MainWindow::OnButtonPrev()
 {
     EnableAll(false);
 
-    if(currFileList_->empty())
+    if(!fileIterator_.HasFiles()) {
         return;
-
-    auto begin = currFileList_->begin();
-    auto end = currFileList_->end();
-
-    if(currFileIt_ == begin)
-        currFileIt_ = end;
-
-    --currFileIt_;
-
-    while(!isImageFormat(*currFileIt_))
-    {
-        if(currFileIt_ == begin)
-            return;
-
-        --currFileIt_;
     }
 
-    loadImage(*currFileIt_);
+    LoadImage(fileIterator_.Prev());
+
+//    if(currFileList_->empty())
+//        return;
+
+//    auto begin = currFileList_->begin();
+//    auto end = currFileList_->end();
+
+//    if(currFileIt_ == begin)
+//        currFileIt_ = end;
+
+//    --currFileIt_;
+
+//    while(!isImageFormat(*currFileIt_))
+//    {
+//        if(currFileIt_ == begin)
+//            return;
+
+//        --currFileIt_;
+//    }
+
+//    LoadImage(*currFileIt_);
+
+
 
     EnableAll(true);
     ui->ProgressLabel->setText("");
 }
 
-void MainWindow::on_NextBtn_clicked()
+void MainWindow::OnButtonNext()
 {
     EnableAll(false);
 
-    if(currFileList_->empty())
+    if(!fileIterator_.HasFiles()) {
         return;
-
-    auto begin = currFileList_->begin();
-    auto end = currFileList_->end();
-
-    if(currFileIt_ == end)
-        currFileIt_ = begin;
-    else{
-        ++currFileIt_;
-        if(currFileIt_ == end)
-            currFileIt_ = begin;
     }
 
-    while(!isImageFormat(*currFileIt_))
-    {
-        ++currFileIt_;
+    LoadImage(fileIterator_.Next());
 
-        if(currFileIt_ == end)
-            return;
-    }
+//    if(currFileList_->empty())
+//        return;
 
-    loadImage(*currFileIt_);
+//    auto begin = currFileList_->begin();
+//    auto end = currFileList_->end();
+
+//    if(currFileIt_ == end)
+//        currFileIt_ = begin;
+//    else{
+//        ++currFileIt_;
+//        if(currFileIt_ == end)
+//            currFileIt_ = begin;
+//    }
+
+//    while(!isImageFormat(*currFileIt_))
+//    {
+//        ++currFileIt_;
+
+//        if(currFileIt_ == end)
+//            return;
+//    }
+
+//    LoadImage(*currFileIt_);
 
     EnableAll(true);
-    //ui->ProgressLabel->setText("Okai");
+    ui->ProgressLabel->setText("");
 }
 
-void MainWindow::on_QuickSaveBtn_clicked()
+void MainWindow::OnActionQuickSave()
 {
-    if(myIMG_->isNull() || currFileIt_ == currFileList_->end())
+    if(myIMG_.isNull() || currFileIt_ == currFileList_->end())
         return;
 
-    myIMG_->save(*currFileIt_);
-    *tmpIMG_ = *myIMG_;
+    myIMG_.save(*currFileIt_);
+    tmpIMG_ = myIMG_;
     ui->ProgressLabel->setText(QObject::tr("Сохранено"));
 }
 

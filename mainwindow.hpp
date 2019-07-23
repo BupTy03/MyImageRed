@@ -5,6 +5,7 @@
 #include "inputmatrixdialog.hpp"
 #include "matrix.hpp"
 #include "histogram.hpp"
+#include "fileiterator.hpp"
 
 #include <QMainWindow>
 #include <QImage>
@@ -49,47 +50,48 @@ public:
     virtual ~MainWindow() override;
 
 private slots:
-    void on_SaveBtn_clicked();
-    void on_LoadBtn_clicked();
-    void on_CancelBtn_clicked();
-    void on_LinCorrBtn_clicked();
-    void on_GrayWorldBtn_clicked();
-    void on_GBOkBtn_clicked();
-    void on_CustomBtn_clicked();
-    void on_Quit_clicked();
-    void on_HistogramBtn_clicked();
-    void on_RotateLeftBtn_clicked();
-    void on_RotateRightBtn_clicked();
-    void on_HMirroredBtn_clicked();
-    void on_VMirroredBtn_clicked();
-    void on_PrevBtn_clicked();
-    void on_NextBtn_clicked();
-    void on_QuickSaveBtn_clicked();
+    void OnActionSave();
+    void OnActionLoad();
+    void OnActionCancel();
+    void OnActionLinearCorrection();
+    void OnActionGrayWorld();
+    void OnActionGaussBlur();
+    void OnActionCustom();
+    void OnActionHistogram();
+    void OnActionRotateLeft();
+    void OnActionRotateRight();
+    void OnActionHMirrored();
+    void OnActionVMirrored();
+    void OnActionQuickSave();
+
+    void OnCustomMatrix();
+
+    void OnButtonPrev();
+    void OnButtonNext();
+
+
+    void ProcIsDone();
 
     // QWidget interface
 protected:
     virtual void closeEvent(QCloseEvent *event) override;
-    virtual void resizeEvent(QResizeEvent*) override { updatePixmap(); }
+    virtual void resizeEvent(QResizeEvent*) override { UpdatePixmap(); }
 
 private:
-    void updatePixmap();
-    bool loadImage(const QString& str);
+    void UpdatePixmap();
+    bool LoadImage(const QString& str);
     void EnableAll(bool flag);
     void StartProcess();
 
-private slots:
-    void CustomMatrix();
-    void ProcIsDone();
-
 signals:
-    void LinCorrStart(QImage*);
+    void LinearCorrectionStart(QImage*);
     void GrayWorldStart(QImage*);
     void GammaStart(QImage*, double, double);
-    void GBStart(QImage*);
-    void MedianStart(QImage*, const int);
+    void GaussBlurStart(QImage*);
+    void MedianStart(QImage*, int);
     void CustomStart(QImage*, const std::vector<double>*);
-    void ErosionStart(QImage*, const int);
-    void IncreaseStart(QImage*, const int);
+    void ErosionStart(QImage*, int);
+    void IncreaseStart(QImage*, int);
     void RotateLeftStart(QImage*);
     void RotateRightStart(QImage*);
     void HMirrorStart(QImage*);
@@ -97,13 +99,17 @@ signals:
 
 private:
     Ui::MainWindow *ui{nullptr};
-    std::unique_ptr<QImage> myIMG_;
-    std::unique_ptr<QImage> tmpIMG_;
+
+    QImage myIMG_;
+    QImage tmpIMG_;
+
+    FileIterator fileIterator_;
+
     std::unique_ptr<QStringList> currFileList_;
     QStringList::iterator currFileIt_;
 
-    InputMatrixDialog* inMtx_;
-    std::unique_ptr<ImageProcessor> imgProc_;
+    InputMatrixDialog* inputMatrixDialog_;
+    std::unique_ptr<ImageProcessor> imageProcessor_;
     std::unique_ptr<QThread, QThreadDeleter> myThread_;
 };
 

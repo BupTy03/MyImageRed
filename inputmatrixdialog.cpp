@@ -48,18 +48,18 @@ InputMatrixDialog::InputMatrixDialog(QWidget* parent, int kernel_size)
             }
         }
 
-        layout()->addItem(curr_layout);
+        (layout())->addItem(curr_layout);
     }
 
     QDialogButtonBox* dialBtns = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
 
-    layout()->addWidget(dialBtns);
+    (layout())->addWidget(dialBtns);
 
     QObject::connect(dialBtns, &QDialogButtonBox::rejected, this, &QDialogButtonBox::close);
-    QObject::connect(dialBtns, &QDialogButtonBox::accepted, this, &InputMatrixDialog::checkInputMatrixValues);
+    QObject::connect(dialBtns, &QDialogButtonBox::accepted, this, &InputMatrixDialog::CheckInputMatrixValues);
 }
 
-void InputMatrixDialog::checkInputMatrixValues()
+void InputMatrixDialog::CheckInputMatrixValues()
 {
     for(const auto line : inputLines_)
     {
@@ -76,11 +76,11 @@ void InputMatrixDialog::checkInputMatrixValues()
             return;
         }
     }
-    this->close();
-    emit valuesChecked();
+    close();
+    emit ValuesChecked();
 }
 
-const std::vector<double>& InputMatrixDialog::getValues() const
+const std::vector<double>& InputMatrixDialog::GetValues() const
 {   
     values_.clear();
     values_.reserve(inputLines_.size());

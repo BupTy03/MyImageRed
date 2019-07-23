@@ -11,7 +11,7 @@ class FileIterator
 public:
     explicit FileIterator()
         : files_{}
-        , filesIt_{std::cbegin(files_)}
+        , filesIt_{std::cend(files_)}
     {}
 
     void LoadDirectory(const QDir& dir);

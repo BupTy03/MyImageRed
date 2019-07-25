@@ -19,38 +19,9 @@ public:
 
     inline bool HasFiles() const { return !files_.isEmpty(); }
 
-//    inline bool HasNext() const { return filesIt_ != std::cend(files_); }
-
-//    QString Next();
-//    QString Prev();
-
-    void operator++()
-    {
-        if(filesIt_ == std::cend(files_)) {
-            filesIt_ = std::cbegin(files_);
-        }
-        else {
-            ++filesIt_;
-            if(filesIt_ == std::cend(files_)) {
-                filesIt_ = std::cbegin(files_);
-            }
-        }
-    }
-    void operator--()
-    {
-        if(filesIt_ == std::cbegin(files_)) {
-            filesIt_ = std::cend(files_);
-        }
-        --filesIt_;
-    }
-
-    QString operator*()
-    {
-        if(files_.isEmpty()) {
-            return {};
-        }
-        return *filesIt_;
-    }
+    void operator++();
+    void operator--();
+    inline QString operator*() const { return files_.isEmpty() ? QString() : *filesIt_; }
 
     template<class F>
     void FilterFiles(F predicate);
@@ -73,7 +44,7 @@ void FileIterator::FilterFiles(F predicate)
         filesIt_ = std::find(std::cbegin(files_), std::cend(files_), currentFile);
     }
     else {
-        filesIt_ = std::cend(files_);
+        filesIt_ = std::cbegin(files_);
     }
 }
 

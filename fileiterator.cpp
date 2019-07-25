@@ -22,25 +22,23 @@ void FileIterator::LoadFile(const QString& pathToFile)
     }
 }
 
-//QString FileIterator::Next()
-//{
-//    if(filesIt_ == std::cend(files_)) {
-//        filesIt_ = std::cbegin(files_);
-//    }
-//    else {
-//        ++filesIt_;
-//        if(filesIt_ == std::cend(files_)) {
-//            filesIt_ = std::cbegin(files_);
-//        }
-//    }
-//    return *filesIt_;
-//}
+void FileIterator::operator++()
+{
+    if(filesIt_ == std::cend(files_)) {
+        filesIt_ = std::cbegin(files_);
+    }
+    else {
+        ++filesIt_;
+        if(filesIt_ == std::cend(files_)) {
+            filesIt_ = std::cbegin(files_);
+        }
+    }
+}
 
-//QString FileIterator::Prev()
-//{
-//    if(filesIt_ == std::cbegin(files_)) {
-//        filesIt_ = std::cend(files_);
-//    }
-//    --filesIt_;
-//    return *filesIt_;
-//}
+void FileIterator::operator--()
+{
+    if(filesIt_ == std::cbegin(files_)) {
+        filesIt_ = std::cend(files_);
+    }
+    --filesIt_;
+}

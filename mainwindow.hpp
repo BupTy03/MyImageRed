@@ -58,19 +58,19 @@ private slots:
     void OnActionGaussBlur();
     void OnActionCustom();
     void OnActionHistogram();
-    void OnActionRotateLeft();
-    void OnActionRotateRight();
-    void OnActionHMirrored();
-    void OnActionVMirrored();
+    void OnButtonHMirrored();
+    void OnButtonVMirrored();
     void OnActionQuickSave();
 
     void OnCustomMatrix();
 
     void OnButtonPrev();
     void OnButtonNext();
+    void OnButtonRotateLeft();
+    void OnButtonRotateRight();
 
 
-    void ProcIsDone();
+    void ProcIsDone(std::shared_ptr<QImage> pImage);
 
     // QWidget interface
 protected:
@@ -84,29 +84,26 @@ private:
     void StartProcess();
 
 signals:
-    void LinearCorrectionStart(QImage*);
-    void GrayWorldStart(QImage*);
-    void GammaStart(QImage*, double, double);
-    void GaussBlurStart(QImage*);
-    void MedianStart(QImage*, int);
-    void CustomStart(QImage*, const std::vector<double>*);
-    void ErosionStart(QImage*, int);
-    void IncreaseStart(QImage*, int);
-    void RotateLeftStart(QImage*);
-    void RotateRightStart(QImage*);
-    void HMirrorStart(QImage*);
-    void VMirrorStart(QImage*);
+    void LinearCorrectionStart(const QImage&);
+    void GrayWorldStart(const QImage&);
+    void GammaStart(const QImage&, double, double);
+    void GaussBlurStart(const QImage&);
+    void MedianStart(const QImage&, int);
+    void CustomStart(const QImage&, const std::vector<double>&);
+    void ErosionStart(const QImage&, int);
+    void IncreaseStart(const QImage&, int);
+    void RotateLeftStart(const QImage&);
+    void RotateRightStart(const QImage&);
+    void HMirrorStart(const QImage&);
+    void VMirrorStart(const QImage&);
 
 private:
     Ui::MainWindow *ui{nullptr};
 
-    QImage myIMG_;
-    QImage tmpIMG_;
+    std::shared_ptr<QImage> myIMG_;
+    std::shared_ptr<QImage> tmpIMG_;
 
     FileIterator fileIterator_;
-
-    std::unique_ptr<QStringList> currFileList_;
-    QStringList::iterator currFileIt_;
 
     InputMatrixDialog* inputMatrixDialog_;
     std::unique_ptr<ImageProcessor> imageProcessor_;

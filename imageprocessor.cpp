@@ -6,87 +6,84 @@ ImageProcessor::ImageProcessor(QObject *parent)
     : QObject(parent)
 {}
 
-void ImageProcessor::MedianFilterGo(QImage *img, const int ksz)
+void ImageProcessor::MedianFilterGo(const QImage& img, const int ksz)
 {
-    assert(img != nullptr);
-    MedianFilter(*img, ksz);
-    emit isDone();
+    auto pImage = std::make_shared<QImage>(img);
+    MedianFilter(*pImage, ksz);
+    emit isDone(pImage);
 }
 
-void ImageProcessor::CustomFilterGo(QImage* img, const std::vector<double>* kernel)
+void ImageProcessor::CustomFilterGo(const QImage& img, const std::vector<double> &kernel)
 {
-    assert(img != nullptr);
-    assert(kernel != nullptr);
-    CustomFilter(*img, *kernel);
-    emit isDone();
+    auto pImage = std::make_shared<QImage>(img);
+    CustomFilter(*pImage, kernel);
+    emit isDone(pImage);
 }
 
-void ImageProcessor::ErosionGo(QImage *img, int ksz)
+void ImageProcessor::ErosionGo(const QImage& img, int ksz)
 {
-    assert(img != nullptr);
-    Erosion(*img, ksz);
-    emit isDone();
+    auto pImage = std::make_shared<QImage>(img);
+    Erosion(*pImage, ksz);
+    emit isDone(pImage);
 }
 
-void ImageProcessor::IncreaseGo(QImage *img, int ksz)
+void ImageProcessor::IncreaseGo(const QImage& img, int ksz)
 {
-    assert(img != nullptr);
-    Increase(*img, ksz);
-    emit isDone();
+    auto pImage = std::make_shared<QImage>(img);
+    Increase(*pImage, ksz);
+    emit isDone(pImage);
 }
 
-void ImageProcessor::RotateLeftGo(QImage* img)
+void ImageProcessor::RotateLeftGo(const QImage& img)
 {
-    assert(img != nullptr);
-    RotateLeft(*img);
-    emit isDone();
+    auto pImage = std::make_shared<QImage>(img);
+    RotateLeft(*pImage);
+    emit isDone(pImage);
 }
 
-void ImageProcessor::RotateRightGo(QImage *img)
+void ImageProcessor::RotateRightGo(const QImage& img)
 {
-    assert(img != nullptr);
-    RotateRight(*img);
-    emit isDone();
+    auto pImage = std::make_shared<QImage>(img);
+    RotateRight(*pImage);
+    emit isDone(pImage);
 }
 
-void ImageProcessor::HMirrorGo(QImage *img)
+void ImageProcessor::HMirrorGo(const QImage& img)
 {
-    assert(img != nullptr);
-    *img = img->mirrored(false, true);
-    emit isDone();
+    auto pImage = std::make_shared<QImage>(img.mirrored(false, true));
+    emit isDone(pImage);
 }
 
-void ImageProcessor::VMirrorGo(QImage *img)
+void ImageProcessor::VMirrorGo(const QImage& img)
 {
-    assert(img != nullptr);
-    *img = img->mirrored(true, false);
-    emit isDone();
+    auto pImage = std::make_shared<QImage>(img.mirrored(true, false));
+    emit isDone(pImage);
 }
 
-void ImageProcessor::GrayWorldGo(QImage *img)
+void ImageProcessor::GrayWorldGo(const QImage &img)
 {
-    assert(img != nullptr);
-    GrayWorld(*img);
-    emit isDone();
+    auto pImage = std::make_shared<QImage>(img);
+    GrayWorld(*pImage);
+    emit isDone(pImage);
 }
 
-void ImageProcessor::LinearCorrGo(QImage *img)
+void ImageProcessor::LinearCorrGo(const QImage &img)
 {
-    assert(img != nullptr);
-    LinearCorrection(*img);
-    emit isDone();
+    auto pImage = std::make_shared<QImage>(img);
+    LinearCorrection(*pImage);
+    emit isDone(pImage);
 }
 
-void ImageProcessor::GammaFuncGo(QImage *img, double c, double d)
+void ImageProcessor::GammaFuncGo(const QImage& img, double c, double d)
 {
-    assert(img != nullptr);
-    GammaFunc(*img, c, d);
-    emit isDone();
+    auto pImage = std::make_shared<QImage>(img);
+    GammaFunc(*pImage, c, d);
+    emit isDone(pImage);
 }
 
-void ImageProcessor::GaussBlurGo(QImage *img)
+void ImageProcessor::GaussBlurGo(const QImage &img)
 {
-    assert(img != nullptr);
-    GaussBlur(*img);
-    emit isDone();
+    auto pImage = std::make_shared<QImage>(img);
+    GaussBlur(*pImage);
+    emit isDone(pImage);
 }

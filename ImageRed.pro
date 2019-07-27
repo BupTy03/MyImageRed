@@ -35,6 +35,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 
 SOURCES += \
+    imageholder.cpp \
         main.cpp \
         mainwindow.cpp \
     histogram.cpp \
@@ -44,6 +45,7 @@ SOURCES += \
     fileiterator.cpp
 
 HEADERS += \
+    imageholder.hpp \
     timer.hpp \
     mycoloriterator.hpp \
     matrix.hpp \

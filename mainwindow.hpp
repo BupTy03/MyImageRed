@@ -6,6 +6,7 @@
 #include "matrix.hpp"
 #include "histogram.hpp"
 #include "fileiterator.hpp"
+#include "imageholder.hpp"
 
 #include <QMainWindow>
 #include <QImage>
@@ -84,6 +85,12 @@ private:
     void StartProcess();
 
 signals:
+    void StartProcessing(std::shared_ptr<QImage>);
+
+    void StartLoadingImage(QString);
+
+    void ProcessImage(std::function<void(QImage&)>);
+
     void LinearCorrectionStart(const QImage&);
     void GrayWorldStart(const QImage&);
     void GammaStart(const QImage&, double, double);
@@ -104,6 +111,8 @@ private:
     std::shared_ptr<QImage> tmpIMG_;
 
     FileIterator fileIterator_;
+
+    std::unique_ptr<ImageHolder> imgHolder_;
 
     InputMatrixDialog* inputMatrixDialog_;
     std::unique_ptr<ImageProcessor> imageProcessor_;

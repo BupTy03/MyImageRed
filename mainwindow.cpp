@@ -17,6 +17,7 @@ using namespace QtCharts;
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui{new Ui::MainWindow}
+    , imgHolder_{std::make_unique<ImageHolder>()}
     , inputMatrixDialog_{new InputMatrixDialog(this)}
     , imageProcessor_{std::make_unique<ImageProcessor>()}
     , myThread_{new QThread}
@@ -25,12 +26,41 @@ MainWindow::MainWindow(QWidget *parent)
     setWindowTitle(QObject::tr("Обработка изображений"));
 
     qRegisterMetaType<std::shared_ptr<QImage>>("std::shared_ptr<QImage>");
+    qRegisterMetaType<std::function<void(QImage&)>>("std::function<void(QImage&)>");
 
-    QObject::connect(imageProcessor_.get(), &ImageProcessor::isDone, this, &MainWindow::ProcIsDone);
-    QObject::connect(this, &MainWindow::RotateLeftStart,        imageProcessor_.get(), &ImageProcessor::RotateLeftGo);
-    QObject::connect(this, &MainWindow::RotateRightStart,       imageProcessor_.get(), &ImageProcessor::RotateRightGo);
-    QObject::connect(this, &MainWindow::HMirrorStart,           imageProcessor_.get(), &ImageProcessor::HMirrorGo);
-    QObject::connect(this, &MainWindow::VMirrorStart,           imageProcessor_.get(), &ImageProcessor::VMirrorGo);
+//    QObject::connect(imageProcessor_.get(), &ImageProcessor::isDone, this, &MainWindow::ProcIsDone);
+//    QObject::connect(this, &MainWindow::RotateLeftStart,        imageProcessor_.get(), &ImageProcessor::RotateLeftGo);
+//    QObject::connect(this, &MainWindow::RotateRightStart,       imageProcessor_.get(), &ImageProcessor::RotateRightGo);
+//    QObject::connect(this, &MainWindow::HMirrorStart,           imageProcessor_.get(), &ImageProcessor::HMirrorGo);
+//    QObject::connect(this, &MainWindow::VMirrorStart,           imageProcessor_.get(), &ImageProcessor::VMirrorGo);
+//    QObject::connect(this, &MainWindow::LinearCorrectionStart,  imageProcessor_.get(), &ImageProcessor::LinearCorrGo);
+//    QObject::connect(this, &MainWindow::GrayWorldStart,         imageProcessor_.get(), &ImageProcessor::GrayWorldGo);
+//    QObject::connect(this, &MainWindow::GammaStart,             imageProcessor_.get(), &ImageProcessor::GammaFuncGo);
+//    QObject::connect(this, &MainWindow::GaussBlurStart,         imageProcessor_.get(), &ImageProcessor::GaussBlurGo);
+//    QObject::connect(this, &MainWindow::MedianStart,            imageProcessor_.get(), &ImageProcessor::MedianFilterGo);
+//    QObject::connect(this, &MainWindow::CustomStart,            imageProcessor_.get(), &ImageProcessor::CustomFilterGo);
+//    QObject::connect(this, &MainWindow::ErosionStart,           imageProcessor_.get(), &ImageProcessor::ErosionGo);
+//    QObject::connect(this, &MainWindow::IncreaseStart,          imageProcessor_.get(), &ImageProcessor::IncreaseGo);
+
+    QObject::connect(ui->actionExit,        &QAction::triggered, this, &MainWindow::close);
+    QObject::connect(ui->actionSave,        &QAction::triggered, this, &MainWindow::OnActionQuickSave);
+    QObject::connect(ui->actionSaveAs,      &QAction::triggered, this, &MainWindow::OnActionSave);
+    QObject::connect(ui->actionCancel,      &QAction::triggered, this, &MainWindow::OnActionCancel);
+    QObject::connect(ui->actionOpenFile,    &QAction::triggered, this, &MainWindow::OnActionLoad);
+
+    QObject::connect(ui->PrevBtn,           &QPushButton::clicked, imgHolder_.get(), &ImageHolder::LoadPreviousImageFile);
+    QObject::connect(ui->NextBtn,           &QPushButton::clicked, imgHolder_.get(), &ImageHolder::LoadNextImageFile);
+    QObject::connect(ui->RotateLeftBtn,     &QPushButton::clicked, [this]{ StartProcess();  emit ProcessImage(RotateLeft); });
+    QObject::connect(ui->RotateRightBtn,    &QPushButton::clicked, [this]{ StartProcess();  emit ProcessImage(RotateRight); });
+    QObject::connect(ui->HMirroredBtn,      &QPushButton::clicked, [this]{ StartProcess();  emit ProcessImage([](QImage& img){ img = img.mirrored(false, true); }); });
+    QObject::connect(ui->VMirroredBtn,      &QPushButton::clicked, [this]{ StartProcess();  emit ProcessImage([](QImage& img){ img = img.mirrored(true, false); }); });
+
+    QObject::connect(ui->actionGaussBlur,               &QAction::triggered, [this]{ StartProcess();  emit ProcessImage(GaussBlur); });
+    QObject::connect(ui->actionGrayWorld,               &QAction::triggered, [this]{ StartProcess();  emit ProcessImage(GrayWorld); });
+    QObject::connect(ui->actionLinearCorrection,        &QAction::triggered, [this]{ StartProcess();  emit ProcessImage(LinearCorrection); });
+    QObject::connect(ui->actionSetConvolutionMatrix,    &QAction::triggered, this, &MainWindow::OnActionCustom);
+    QObject::connect(ui->actionHistogram,               &QAction::triggered, this, &MainWindow::OnActionHistogram);
+
     QObject::connect(this, &MainWindow::LinearCorrectionStart,  imageProcessor_.get(), &ImageProcessor::LinearCorrGo);
     QObject::connect(this, &MainWindow::GrayWorldStart,         imageProcessor_.get(), &ImageProcessor::GrayWorldGo);
     QObject::connect(this, &MainWindow::GammaStart,             imageProcessor_.get(), &ImageProcessor::GammaFuncGo);
@@ -40,29 +70,36 @@ MainWindow::MainWindow(QWidget *parent)
     QObject::connect(this, &MainWindow::ErosionStart,           imageProcessor_.get(), &ImageProcessor::ErosionGo);
     QObject::connect(this, &MainWindow::IncreaseStart,          imageProcessor_.get(), &ImageProcessor::IncreaseGo);
 
-    QObject::connect(ui->actionExit,        &QAction::triggered, this, &MainWindow::close);
-    QObject::connect(ui->actionSave,        &QAction::triggered, this, &MainWindow::OnActionQuickSave);
-    QObject::connect(ui->actionSaveAs,      &QAction::triggered, this, &MainWindow::OnActionSave);
-    QObject::connect(ui->actionCancel,      &QAction::triggered, this, &MainWindow::OnActionCancel);
-    QObject::connect(ui->actionOpenFile,    &QAction::triggered, this, &MainWindow::OnActionLoad);
-
-    QObject::connect(ui->PrevBtn,           &QPushButton::clicked, this, &MainWindow::OnButtonPrev);
-    QObject::connect(ui->NextBtn,           &QPushButton::clicked, this, &MainWindow::OnButtonNext);
-    QObject::connect(ui->RotateLeftBtn,     &QPushButton::clicked, this, &MainWindow::OnButtonRotateLeft);
-    QObject::connect(ui->RotateRightBtn,    &QPushButton::clicked, this, &MainWindow::OnButtonRotateRight);
-    QObject::connect(ui->HMirroredBtn,      &QPushButton::clicked, this, &MainWindow::OnButtonHMirrored);
-    QObject::connect(ui->VMirroredBtn,      &QPushButton::clicked, this, &MainWindow::OnButtonVMirrored);
+//    QObject::connect(ui->PrevBtn,           &QPushButton::clicked, this, &MainWindow::OnButtonPrev);
+//    QObject::connect(ui->NextBtn,           &QPushButton::clicked, this, &MainWindow::OnButtonNext);
+//    QObject::connect(ui->RotateLeftBtn,     &QPushButton::clicked, this, &MainWindow::OnButtonRotateLeft);
+//    QObject::connect(ui->RotateRightBtn,    &QPushButton::clicked, this, &MainWindow::OnButtonRotateRight);
+//    QObject::connect(ui->HMirroredBtn,      &QPushButton::clicked, this, &MainWindow::OnButtonHMirrored);
+//    QObject::connect(ui->VMirroredBtn,      &QPushButton::clicked, this, &MainWindow::OnButtonVMirrored);
     QObject::connect(ui->QuickSaveBtn,      &QPushButton::clicked, this, &MainWindow::OnActionQuickSave);
 
-    QObject::connect(ui->actionGaussBlur,               &QAction::triggered, this, &MainWindow::OnActionGaussBlur);
-    QObject::connect(ui->actionGrayWorld,               &QAction::triggered, this, &MainWindow::OnActionGrayWorld);
-    QObject::connect(ui->actionLinearCorrection,        &QAction::triggered, this, &MainWindow::OnActionLinearCorrection);
-    QObject::connect(ui->actionSetConvolutionMatrix,    &QAction::triggered, this, &MainWindow::OnActionCustom);
-    QObject::connect(ui->actionHistogram,               &QAction::triggered, this, &MainWindow::OnActionHistogram);
+//    QObject::connect(ui->actionGaussBlur,               &QAction::triggered, this, &MainWindow::OnActionGaussBlur);
+//    QObject::connect(ui->actionGrayWorld,               &QAction::triggered, this, &MainWindow::OnActionGrayWorld);
+//    QObject::connect(ui->actionLinearCorrection,        &QAction::triggered, this, &MainWindow::OnActionLinearCorrection);
+//    QObject::connect(ui->actionSetConvolutionMatrix,    &QAction::triggered, this, &MainWindow::OnActionCustom);
+//    QObject::connect(ui->actionHistogram,               &QAction::triggered, this, &MainWindow::OnActionHistogram);
 
-    QObject::connect(inputMatrixDialog_, &InputMatrixDialog::ValuesChecked, this, &MainWindow::OnCustomMatrix);
 
-    imageProcessor_->moveToThread(myThread_.get());
+    QObject::connect(imgHolder_.get(), &ImageHolder::ProcessingDone, this, &MainWindow::ProcIsDone);
+    QObject::connect(imgHolder_.get(), &ImageHolder::ImageLoaded, this, &MainWindow::ProcIsDone);
+    QObject::connect(this, &MainWindow::StartLoadingImage, imgHolder_.get(), &ImageHolder::LoadImageFile);
+    QObject::connect(this, &MainWindow::ProcessImage, imgHolder_.get(), &ImageHolder::StartImageProcessing);
+
+    QObject::connect(inputMatrixDialog_, &InputMatrixDialog::ValuesChecked,
+    [this, &vec = inputMatrixDialog_->GetValues()]
+    {
+        StartProcess();
+        emit ProcessImage([&vec](QImage& img){ CustomFilter(img, vec); });
+    });
+
+    imgHolder_->moveToThread(myThread_.get());
+
+    //imageProcessor_->moveToThread(myThread_.get());
     myThread_->start();
 }
 
@@ -134,21 +171,8 @@ static bool isImageFormat(const QString& str)
 void MainWindow::OnActionLoad()
 {
     const QString fileName = QFileDialog::getOpenFileName(this, QObject::tr("Открыть файл"), "/", "*.jpg *.jpeg *.png *.bmp");
-    if(fileName.isEmpty()) {
-        return;
-    }
-
-    fileIterator_.LoadFile(fileName);
-    fileIterator_.FilterFiles(isImageFormat);
-
-    if(!fileIterator_.HasFiles()) {
-        return;
-    }
-
-    LoadImage(*fileIterator_);
-
-    EnableAll(true);
-    ui->ProgressLabel->setText("");
+    EnableAll(false);
+    emit StartLoadingImage(fileName);
 }
 
 void MainWindow::OnActionCancel()

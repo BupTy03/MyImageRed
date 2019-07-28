@@ -13,7 +13,13 @@
 constexpr int MAX_COLOR = 256;
 
 using ColorMatrix = Matrix<color_t>;
+using Hist = std::vector<std::uint64_t>;
 using HistArray = std::array<std::uint64_t, MAX_COLOR>;
+using HistRGB = std::tuple<
+    std::vector<std::uint64_t>,
+    std::vector<std::uint64_t>,
+    std::vector<std::uint64_t>
+>;
 
 using MinMaxColorPair = std::pair<color_t, color_t>;
 using MinMaxColorTuple = std::tuple<
@@ -36,5 +42,6 @@ void CustomFilter(QImage& img, const std::vector<double>& kernel);
 void Erosion(QImage& img, const int kernelSize);
 void Increase(QImage& img, const int kernelSize);
 
+HistRGB MakeHistogram(QImage& img);
 
 #endif // IMAGEPROCESSING_H

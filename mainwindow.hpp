@@ -72,6 +72,7 @@ private slots:
 
 
     void ProcIsDone(std::shared_ptr<QImage> pImage);
+    void ShowHistogram(HistRGB hist);
 
     // QWidget interface
 protected:
@@ -90,6 +91,8 @@ signals:
     void StartLoadingImage(QString);
 
     void ProcessImage(std::function<void(QImage&)>);
+
+    void GetHistogram();
 
     void LinearCorrectionStart(const QImage&);
     void GrayWorldStart(const QImage&);
@@ -114,7 +117,7 @@ private:
 
     std::unique_ptr<ImageHolder> imgHolder_;
 
-    InputMatrixDialog* inputMatrixDialog_;
+    InputMatrixDialog* inputMatrixDialog_{nullptr};
     std::unique_ptr<ImageProcessor> imageProcessor_;
     std::unique_ptr<QThread, QThreadDeleter> myThread_;
 };

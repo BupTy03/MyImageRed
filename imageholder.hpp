@@ -2,6 +2,7 @@
 #define IMAGEHOLDER_HPP
 
 #include "fileiterator.hpp"
+#include "imageprocessing.hpp"
 
 #include <QObject>
 #include <QImage>
@@ -19,6 +20,7 @@ signals:
     void Update(std::shared_ptr<QImage>);
     void ImageLoaded(std::shared_ptr<QImage>);
     void ProcessingDone(std::shared_ptr<QImage>);
+    void HistogramDone(HistRGB);
 
 public slots:
     void OnRequestUpdate() { Update(img_); }
@@ -27,6 +29,8 @@ public slots:
     void LoadPreviousImageFile();
     void LoadNextImageFile();
     void StartImageProcessing(std::function<void(QImage&)> processingFunction);
+
+    void StartHistogram();
 
 private:
     void LoadImage(const QString& filename);

@@ -567,3 +567,22 @@ void Increase(QImage& img, const int kernelSize)
                                   IncreaseLoopPart, std::cref(img), std::ref(newImg), kernelSize);
     img = move(newImg);
 }
+
+HistRGB MakeHistogram(QImage& img)
+{
+    Hist arr_valsRed(MAX_COLOR, 0);
+    Hist arr_valsGreen(MAX_COLOR, 0);
+    Hist arr_valsBlue(MAX_COLOR, 0);
+
+    auto first = ConstMyColorIterator::CBegin(img);
+    auto last = ConstMyColorIterator::CEnd(img);
+
+    for(; first != last; ++first)
+    {
+        arr_valsRed.at(first.red())++;
+        arr_valsGreen.at(first.green())++;
+        arr_valsBlue.at(first.blue())++;
+    }
+
+    return {arr_valsRed, arr_valsGreen, arr_valsBlue};
+}

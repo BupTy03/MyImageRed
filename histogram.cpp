@@ -7,9 +7,7 @@
 
 using namespace QtCharts;
 
-Histogram::Histogram(const HistArray& Red,
-                     const HistArray& Green,
-                     const HistArray& Blue,
+Histogram::Histogram(const HistRGB& histRGB,
                      QWidget* parent)
     : QDialog{parent}
 {
@@ -27,10 +25,18 @@ Histogram::Histogram(const HistArray& Red,
     seriesGreen->setColor(qRgb(0, 255, 0));
     seriesBlue->setColor(qRgb(0, 0, 255));
 
+    Hist Red;
+    Hist Green;
+    Hist Blue;
+    std::tie(Red, Green, Blue) = histRGB;
+    assert(Red.size() == MAX_COLOR);
+    assert(Green.size() == MAX_COLOR);
+    assert(Blue.size() == MAX_COLOR);
+
     for(std::size_t i = 0; i < MAX_COLOR; ++i){
-        (*seriesRed) << QPoint(static_cast<int>(i), static_cast<int>(Red[i]));
-        (*seriesGreen) << QPoint(static_cast<int>(i), static_cast<int>(Green[i]));
-        (*seriesBlue) << QPoint(static_cast<int>(i), static_cast<int>(Blue[i]));
+        (*seriesRed) << QPoint(static_cast<int>(i), static_cast<int>(Red.at(i)));
+        (*seriesGreen) << QPoint(static_cast<int>(i), static_cast<int>(Green.at(i)));
+        (*seriesBlue) << QPoint(static_cast<int>(i), static_cast<int>(Blue.at(i)));
     }
 
 

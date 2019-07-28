@@ -57,6 +57,13 @@ void ImageHolder::StartImageProcessing(std::function<void(QImage&)> processingFu
     emit ProcessingDone(img_);
 }
 
+void ImageHolder::StartHistogram()
+{
+    if(img_) {
+        emit HistogramDone(MakeHistogram(*img_));
+    }
+}
+
 void ImageHolder::LoadImage(const QString& filename)
 {
     if(filename.isEmpty()) {

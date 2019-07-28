@@ -9,10 +9,7 @@ class Histogram : public QDialog
 {
     Q_OBJECT
 public:
-    explicit Histogram(
-            const HistArray& Red,
-            const HistArray& Green,
-            const HistArray& Blue,
+    explicit Histogram(const HistRGB &histRGB,
             QWidget* parent = nullptr);
 };
 

@@ -53,7 +53,6 @@ public:
 private slots:
     void OnActionSave();
     void OnActionLoad();
-    void OnActionCancel();
     void OnActionLinearCorrection();
     void OnActionGrayWorld();
     void OnActionGaussBlur();
@@ -86,12 +85,10 @@ private:
     void StartProcess();
 
 signals:
-    void StartProcessing(std::shared_ptr<QImage>);
+    //void StartProcessing(std::shared_ptr<QImage>);
 
     void StartLoadingImage(QString);
-
     void ProcessImage(std::function<void(QImage&)>);
-
     void GetHistogram();
 
     void LinearCorrectionStart(const QImage&);
@@ -111,7 +108,6 @@ private:
     Ui::MainWindow *ui{nullptr};
 
     std::shared_ptr<QImage> myIMG_;
-    std::shared_ptr<QImage> tmpIMG_;
 
     FileIterator fileIterator_;
 

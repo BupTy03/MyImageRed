@@ -28,6 +28,7 @@ public slots:
     void LoadImageFile(QString filename);
     void LoadPreviousImageFile();
     void LoadNextImageFile();
+    void RevertImage();
     void StartImageProcessing(std::function<void(QImage&)> processingFunction);
 
     void StartHistogram();
@@ -37,6 +38,7 @@ private:
 
 private:
     std::shared_ptr<QImage> img_;
+    std::shared_ptr<QImage> tmpIMG_;
     FileIterator fileIterator_;
 };
 

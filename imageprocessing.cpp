@@ -299,7 +299,7 @@ void GammaFunc(QImage& img, double c, double d)
 template<class Function, class... Args>
 static void ParallelizeMatrixCalculations(
         const int countThreads,
-        const int heightMatrix, const int widthMatrix,
+        const int widthMatrix, const int heightMatrix,
         Function&& func, Args&&... args
         )
 {
@@ -308,22 +308,22 @@ static void ParallelizeMatrixCalculations(
     assert(widthMatrix > 0);
 
     std::vector<std::future<void>> futures;
-    const int part = widthMatrix / countThreads;
+    const int part = heightMatrix / countThreads;
+    int beginPart = 0;
     for(int i = 1; i <= countThreads; ++i)
     {
         futures.push_back(std::async(std::launch::async, std::forward<Function>(func),
-                   0,               // first row
-                   (i - 1) * part,  // first column
-                   heightMatrix,     // last row
-                   i * part,        // last column
+                   0,                       // first row
+                   beginPart,               // first column
+                   widthMatrix,             // last row
+                   beginPart + part,        // last column
                    std::forward<Args>(args)...
         ));
+        beginPart += part;
     }
 
     for(const auto& fut : futures)
-    {
         fut.wait();
-    }
 }
 
 template<const int kernelSize>
@@ -371,7 +371,7 @@ void GaussBlur(QImage& img)
 
     double div = std::accumulate(kernel.cbegin(), kernel.cend(), 0.0);
 
-    ParallelizeMatrixCalculations(QThread::idealThreadCount(), height, width,
+    ParallelizeMatrixCalculations(QThread::idealThreadCount(), width, height,
                                   GaussBlurLoopPart<ksz>, std::ref(img), std::ref(kernel), div);
 }
 
@@ -418,9 +418,9 @@ void MedianFilter(QImage& img, const int kernelSize)
 
     QImage newImg(width, height, QImage::Format_RGB32);
 
-    ParallelizeMatrixCalculations(QThread::idealThreadCount(), height, width,
+    ParallelizeMatrixCalculations(1, width, height,
                                   MedianFilterLoopPart, std::ref(img), std::ref(newImg), kernelSize);
-    img = move(newImg);
+    img = std::move(newImg);
 }
 
 static void CustomFilterLoopPart(
@@ -465,7 +465,7 @@ void CustomFilter(QImage& img, const std::vector<double>& kernel)
 
     const double divider = std::accumulate(kernel.cbegin(), kernel.cend(), 0.0);
 
-    ParallelizeMatrixCalculations(QThread::idealThreadCount(), height, width,
+    ParallelizeMatrixCalculations(QThread::idealThreadCount(), width, height,
                                   CustomFilterLoopPart, std::cref(img), std::ref(newImg), std::cref(kernel), kernelSize, divider);
     img = move(newImg);
 }
@@ -490,7 +490,7 @@ static void ErosionLoopPart(
         {
             FillTmpMatrix(img, partR, partG, partB, kernelSize, row, col);
 
-            bool isNewLine = (col == 0);
+            const bool isNewLine = (col == 0);
 
             const auto r = FindMin(partR, histR, isNewLine);
             const auto g = FindMin(partG, histG, isNewLine);
@@ -514,7 +514,7 @@ void Erosion(QImage& img, const int kernelSize)
 
     QImage newImg(width, height, QImage::Format_RGB32);
 
-    ParallelizeMatrixCalculations(QThread::idealThreadCount(), height, width,
+    ParallelizeMatrixCalculations(1, width, height,
                                   ErosionLoopPart, std::cref(img), std::ref(newImg), kernelSize);
     img = move(newImg);
 }
@@ -563,7 +563,7 @@ void Increase(QImage& img, const int kernelSize)
 
     QImage newImg(width, height, QImage::Format_RGB32);
 
-    ParallelizeMatrixCalculations(QThread::idealThreadCount(), height, width,
+    ParallelizeMatrixCalculations(1, width, height,
                                   IncreaseLoopPart, std::cref(img), std::ref(newImg), kernelSize);
     img = move(newImg);
 }

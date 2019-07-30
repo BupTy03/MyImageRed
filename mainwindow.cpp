@@ -3,6 +3,7 @@
 #include "myimageproc.h"
 #include "imageprocessor.hpp"
 #include "inputmatrixdialog.hpp"
+#include "kerneldimensiondialog.hpp"
 
 #include <algorithm>
 
@@ -32,7 +33,7 @@ MainWindow::MainWindow(QWidget *parent)
     QObject::connect(ui->actionExit,        &QAction::triggered, this, &MainWindow::close);
     QObject::connect(ui->actionSave,        &QAction::triggered, this, &MainWindow::OnActionQuickSave);
     QObject::connect(ui->actionSaveAs,      &QAction::triggered, this, &MainWindow::OnActionSave);
-    QObject::connect(ui->actionCancel,      &QAction::triggered, this, &MainWindow::OnActionCancel);
+    QObject::connect(ui->actionCancel,      &QAction::triggered, imgHolder_.get(), &ImageHolder::RevertImage);
     QObject::connect(ui->actionOpenFile,    &QAction::triggered, this, &MainWindow::OnActionLoad);
 
     QObject::connect(ui->PrevBtn,           &QPushButton::clicked, imgHolder_.get(), &ImageHolder::LoadPreviousImageFile);
@@ -46,6 +47,36 @@ MainWindow::MainWindow(QWidget *parent)
     QObject::connect(ui->actionGrayWorld,               &QAction::triggered, [this]{ StartProcess();  emit ProcessImage(GrayWorld); });
     QObject::connect(ui->actionLinearCorrection,        &QAction::triggered, [this]{ StartProcess();  emit ProcessImage(LinearCorrection); });
     QObject::connect(ui->actionSetConvolutionMatrix,    &QAction::triggered, [this]{ inputMatrixDialog_->show(); });
+
+    QObject::connect(ui->actionMedianFilter, &QAction::triggered, [this] {
+        auto dial = std::make_unique<KernelDimensionDialog>(this);
+        if(dial->exec() != QDialog::DialogCode::Accepted)
+            return;
+
+        const auto value = dial->GetValue();
+        StartProcess();
+        emit ProcessImage([value](QImage& img) { MedianFilter(img, value); });
+    });
+
+    QObject::connect(ui->actionErosion, &QAction::triggered, [this] {
+        auto dial = std::make_unique<KernelDimensionDialog>(this);
+        if(dial->exec() != QDialog::DialogCode::Accepted)
+            return;
+
+        const auto value = dial->GetValue();
+        StartProcess();
+        emit ProcessImage([value](QImage& img) { Erosion(img, value); });
+    });
+
+    QObject::connect(ui->actionIncrease, &QAction::triggered, [this] {
+        auto dial = std::make_unique<KernelDimensionDialog>(this);
+        if(dial->exec() != QDialog::DialogCode::Accepted)
+            return;
+
+        const auto value = dial->GetValue();
+        StartProcess();
+        emit ProcessImage([value](QImage& img) { Increase(img, value); });
+    });
 
     QObject::connect(this, &MainWindow::GetHistogram, imgHolder_.get(), &ImageHolder::StartHistogram);
     QObject::connect(imgHolder_.get(), &ImageHolder::HistogramDone, this, &MainWindow::ShowHistogram);
@@ -94,7 +125,6 @@ bool MainWindow::LoadImage(const QString &str)
     else {
         myIMG_ = std::move(newImg);
     }
-    tmpIMG_ = myIMG_;
     UpdatePixmap();
 
     return true;
@@ -133,14 +163,6 @@ void MainWindow::OnActionLoad()
     const QString fileName = QFileDialog::getOpenFileName(this, QObject::tr("Открыть файл"), "/", "*.jpg *.jpeg *.png *.bmp");
     EnableAll(false);
     emit StartLoadingImage(fileName);
-}
-
-void MainWindow::OnActionCancel()
-{
-    assert(tmpIMG_);
-    myIMG_ = tmpIMG_;
-    UpdatePixmap();
-    ui->ProgressLabel->setText("");
 }
 
 void MainWindow::OnActionLinearCorrection()
@@ -277,7 +299,6 @@ void MainWindow::OnActionQuickSave()
         return;
 
     myIMG_->save(*fileIterator_);
-    tmpIMG_ = myIMG_;
     ui->ProgressLabel->setText(QObject::tr("Сохранено"));
 }
 

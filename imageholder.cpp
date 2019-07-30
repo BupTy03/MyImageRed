@@ -1,4 +1,5 @@
 #include "imageholder.hpp"
+#include <QDebug>
 
 static bool isImageFormat(const QString& str)
 {
@@ -49,9 +50,18 @@ void ImageHolder::LoadNextImageFile()
     LoadImage(*fileIterator_);
 }
 
+void ImageHolder::RevertImage()
+{
+    if(tmpIMG_) {
+        img_ = tmpIMG_;
+        emit ImageLoaded(img_);
+    }
+}
+
 void ImageHolder::StartImageProcessing(std::function<void(QImage&)> processingFunction)
 {
     if(img_) {
+        tmpIMG_ = std::make_shared<QImage>(*img_);
         processingFunction(*img_);
     }
     emit ProcessingDone(img_);
@@ -83,5 +93,6 @@ void ImageHolder::LoadImage(const QString& filename)
     else {
         img_ = std::move(newImg);
     }
+    tmpIMG_ = std::make_shared<QImage>(*img_);
     emit ImageLoaded(img_);
 }

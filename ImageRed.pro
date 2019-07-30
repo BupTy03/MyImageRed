@@ -36,6 +36,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
     imageholder.cpp \
+    kerneldimensiondialog.cpp \
         main.cpp \
         mainwindow.cpp \
     histogram.cpp \
@@ -46,6 +47,7 @@ SOURCES += \
 
 HEADERS += \
     imageholder.hpp \
+    kerneldimensiondialog.hpp \
     timer.hpp \
     mycoloriterator.hpp \
     matrix.hpp \

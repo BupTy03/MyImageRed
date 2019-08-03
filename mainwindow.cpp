@@ -4,6 +4,7 @@
 #include "imageprocessor.hpp"
 #include "inputmatrixdialog.hpp"
 #include "kerneldimensiondialog.hpp"
+#include "gammaargsdialog.hpp"
 
 #include <algorithm>
 
@@ -78,6 +79,15 @@ MainWindow::MainWindow(QWidget *parent)
         emit ProcessImage([value](QImage& img) { Increase(img, value); });
     });
 
+    QObject::connect(ui->actionGammaCorrection, &QAction::triggered, [this] {
+        auto dial = std::make_unique<GammaArgsDialog>();
+        if(dial->exec() != QDialog::DialogCode::Accepted)
+            return;
+
+        StartProcess();
+        emit ProcessImage([coeff = dial->GetGammaCoefficients()](QImage& img){ GammaFunc(img, coeff.A, coeff.Gamma); });
+    });
+
     QObject::connect(this, &MainWindow::GetHistogram, imgHolder_.get(), &ImageHolder::StartHistogram);
     QObject::connect(imgHolder_.get(), &ImageHolder::HistogramDone, this, &MainWindow::ShowHistogram);
     QObject::connect(ui->actionHistogram, &QAction::triggered, [this]{ StartProcess(); emit GetHistogram(); });
@@ -112,7 +122,7 @@ void MainWindow::UpdatePixmap()
     ui->label->setPixmap(pm.scaled(ui->label->width(), ui->label->height(), Qt::KeepAspectRatio));
 }
 
-bool MainWindow::LoadImage(const QString &str)
+bool MainWindow::LoadNewImage(const QString &str)
 {
     auto newImg = std::make_unique<QImage>();
     if(!newImg->load(str)){
@@ -271,7 +281,7 @@ void MainWindow::OnButtonPrev()
     }
 
     --fileIterator_;
-    LoadImage(*fileIterator_);
+    LoadNewImage(*fileIterator_);
 
     EnableAll(true);
     ui->ProgressLabel->setText("");
@@ -286,7 +296,7 @@ void MainWindow::OnButtonNext()
     }
 
     ++fileIterator_;
-    LoadImage(*fileIterator_);
+    LoadNewImage(*fileIterator_);
 
     EnableAll(true);
     ui->ProgressLabel->setText("");

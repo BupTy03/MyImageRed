@@ -88,3 +88,84 @@ QScrollBar {
 QLabel#ProgressLabel {
     margin-left: 25px;
 }
+
+QSpinBox,
+QDoubleSpinBox {
+    padding-right: 15px;
+    min-height: 16px;
+    border: 1px solid #7c7c7c;
+    border-radius: 2px;
+    padding: 2px;
+}
+
+QSpinBox:focus,
+QDoubleSpinBox:focus {
+    border: 1px solid #3873d9;
+}
+
+QSpinBox::up-button,
+QDoubleSpinBox::up-button {
+    subcontrol-origin: border;
+    subcontrol-position: top right;
+
+    max-height: 3px;
+    width: 16px;
+    border-radius: 1px;
+    border: 1px solid #7c7c7c;
+    margin-right: 2px;
+    margin-top: 2px;
+    margin-bottom: 1px;
+}
+
+QSpinBox::up-button:focus,
+QDoubleSpinBox::up-button:focus {
+    border: 1px solid #3873d9;
+}
+
+QSpinBox::up-button:pressed,
+QDoubleSpinBox::up-button:pressed {
+}
+
+QSpinBox::up-arrow,
+QDoubleSpinBox::up-arrow {
+    color: red;
+}
+
+QSpinBox::up-arrow:disabled,
+QSpinBox::up-arrow:off,
+QDoubleSpinBox::up-arrow:disabled,
+QDoubleSpinBox::up-arrow:off{
+}
+
+QSpinBox::down-button,
+QDoubleSpinBox::down-button{
+    subcontrol-origin: border;
+    subcontrol-position: bottom right;
+
+    max-height: 2px;
+    width: 16px;
+    border-radius: 1px;
+    border: 1px solid #7c7c7c;
+    margin-right: 2px;
+    margin-bottom: 2px;
+    margin-top: 1px;
+}
+
+QSpinBox::down-button:focus,
+QDoubleSpinBox::down-button:focus {
+    border: 1px solid #3873d9;
+}
+
+QSpinBox::down-button:pressed,
+QDoubleSpinBox::down-button:pressed {
+}
+
+QSpinBox::down-arrow,
+QDoubleSpinBox::down-arrow {
+}
+
+QSpinBox::down-arrow:disabled,
+QSpinBox::down-arrow:off,
+QDoubleSpinBox::down-arrow:disabled,
+QDoubleSpinBox::down-arrow:off {
+}

@@ -35,6 +35,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 
 SOURCES += \
+    gammaargsdialog.cpp \
     imageholder.cpp \
     kerneldimensiondialog.cpp \
         main.cpp \
@@ -46,6 +47,8 @@ SOURCES += \
     fileiterator.cpp
 
 HEADERS += \
+    gammaargsdialog.hpp \
+    gammacoefficients.hpp \
     imageholder.hpp \
     kerneldimensiondialog.hpp \
     timer.hpp \

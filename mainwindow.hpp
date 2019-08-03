@@ -80,7 +80,7 @@ protected:
 
 private:
     void UpdatePixmap();
-    bool LoadImage(const QString& str);
+    bool LoadNewImage(const QString& str);
     void EnableAll(bool flag);
     void StartProcess();
 

@@ -1,4 +1,5 @@
 #include "mainwindow.hpp"
+#include "gammaargsdialog.hpp"
 
 #include <QApplication>
 

@@ -70,7 +70,7 @@ private slots:
     void OnButtonRotateRight();
 
 
-    void ProcIsDone(std::shared_ptr<QImage> pImage);
+    void ProcIsDone(std::shared_ptr<const QImage> pImage);
     void ShowHistogram(HistRGB hist);
 
     // QWidget interface
@@ -85,8 +85,6 @@ private:
     void StartProcess();
 
 signals:
-    //void StartProcessing(std::shared_ptr<QImage>);
-
     void StartLoadingImage(QString);
     void ProcessImage(std::function<void(QImage&)>);
     void GetHistogram();
@@ -105,15 +103,11 @@ signals:
     void VMirrorStart(const QImage&);
 
 private:
-    Ui::MainWindow *ui{nullptr};
-
-    std::shared_ptr<QImage> myIMG_;
-
-    FileIterator fileIterator_;
-
-    std::unique_ptr<ImageHolder> imgHolder_;
-
+    Ui::MainWindow* ui{nullptr};
     InputMatrixDialog* inputMatrixDialog_{nullptr};
+    FileIterator fileIterator_;
+    std::shared_ptr<const QImage> myIMG_;
+    std::unique_ptr<ImageHolder> imgHolder_;
     std::unique_ptr<ImageProcessor> imageProcessor_;
     std::unique_ptr<QThread, QThreadDeleter> myThread_;
 };

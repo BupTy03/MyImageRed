@@ -2,6 +2,7 @@
 #define IMAGEHOLDER_HPP
 
 #include "fileiterator.hpp"
+#include "imagestates.hpp"
 #include "imageprocessing.hpp"
 
 #include <QObject>
@@ -14,31 +15,30 @@ class ImageHolder : public QObject
 {
     Q_OBJECT
 public:
-    explicit ImageHolder(QObject *parent = nullptr);
+    explicit ImageHolder() : QObject() {}
+
+    inline std::shared_ptr<const QImage> NextImageState() { return imageStates_.NextState(); }
+    inline std::shared_ptr<const QImage> PrevImageState() { return imageStates_.PrevState(); }
+    inline std::shared_ptr<const QImage> RevertImage()    { return imageStates_.Revert(); }
 
 signals:
-    void Update(std::shared_ptr<QImage>);
-    void ImageLoaded(std::shared_ptr<QImage>);
-    void ProcessingDone(std::shared_ptr<QImage>);
+    void ImageLoaded(std::shared_ptr<const QImage>);
+    void ProcessingDone(std::shared_ptr<const QImage>);
     void HistogramDone(HistRGB);
 
 public slots:
-    void OnRequestUpdate() { Update(img_); }
-
     void LoadImageFile(QString filename);
     void LoadPreviousImageFile();
     void LoadNextImageFile();
-    void RevertImage();
-    void StartImageProcessing(std::function<void(QImage&)> processingFunction);
 
+    void StartImageProcessing(std::function<void(QImage&)> processingFunction);
     void StartHistogram();
 
 private:
     void LoadImage(const QString& filename);
 
 private:
-    std::shared_ptr<QImage> img_;
-    std::shared_ptr<QImage> tmpIMG_;
+    ImageStates imageStates_;
     FileIterator fileIterator_;
 };
 

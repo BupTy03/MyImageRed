@@ -8,5 +8,7 @@
         <file>img/rotate_right.png</file>
         <file>img/save.png</file>
         <file>img/VMirror.png</file>
+        <file>img/next_state.png</file>
+        <file>img/prev_state.png</file>
     </qresource>
 </RCC>

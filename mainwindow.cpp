@@ -19,26 +19,39 @@ using namespace QtCharts;
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui{new Ui::MainWindow}
-    , imgHolder_{std::make_unique<ImageHolder>()}
     , inputMatrixDialog_{new InputMatrixDialog(this)}
+    , imgHolder_{std::make_unique<ImageHolder>()}
     , imageProcessor_{std::make_unique<ImageProcessor>()}
     , myThread_{new QThread}
 {
     ui->setupUi(this);
     setWindowTitle(QObject::tr("Обработка изображений"));
 
-    //    QObject::connect(this, &MainWindow::MedianStart,            imageProcessor_.get(), &ImageProcessor::MedianFilterGo);
-    //    QObject::connect(this, &MainWindow::ErosionStart,           imageProcessor_.get(), &ImageProcessor::ErosionGo);
-    //    QObject::connect(this, &MainWindow::IncreaseStart,          imageProcessor_.get(), &ImageProcessor::IncreaseGo);
-
     QObject::connect(ui->actionExit,        &QAction::triggered, this, &MainWindow::close);
     QObject::connect(ui->actionSave,        &QAction::triggered, this, &MainWindow::OnActionQuickSave);
     QObject::connect(ui->actionSaveAs,      &QAction::triggered, this, &MainWindow::OnActionSave);
-    QObject::connect(ui->actionCancel,      &QAction::triggered, imgHolder_.get(), &ImageHolder::RevertImage);
+    QObject::connect(ui->actionCancel,      &QAction::triggered, [this]{ myIMG_ = imgHolder_->RevertImage(); UpdatePixmap(); });
     QObject::connect(ui->actionOpenFile,    &QAction::triggered, this, &MainWindow::OnActionLoad);
 
     QObject::connect(ui->PrevBtn,           &QPushButton::clicked, imgHolder_.get(), &ImageHolder::LoadPreviousImageFile);
     QObject::connect(ui->NextBtn,           &QPushButton::clicked, imgHolder_.get(), &ImageHolder::LoadNextImageFile);
+
+    QObject::connect(ui->PrevStateBtn, &QPushButton::clicked, [this] {
+        auto pImage = imgHolder_->PrevImageState();
+        if(pImage) {
+            myIMG_ = std::move(pImage);
+            UpdatePixmap();
+        }
+    });
+
+    QObject::connect(ui->NextStateBtn, &QPushButton::clicked, [this] {
+        auto pImage = imgHolder_->NextImageState();
+        if(pImage) {
+            myIMG_ = std::move(pImage);
+            UpdatePixmap();
+        }
+    });
+
     QObject::connect(ui->RotateLeftBtn,     &QPushButton::clicked, [this]{ StartProcess();  emit ProcessImage(RotateLeft); });
     QObject::connect(ui->RotateRightBtn,    &QPushButton::clicked, [this]{ StartProcess();  emit ProcessImage(RotateRight); });
     QObject::connect(ui->HMirroredBtn,      &QPushButton::clicked, [this]{ StartProcess();  emit ProcessImage([](QImage& img){ img = img.mirrored(false, true); }); });
@@ -145,6 +158,8 @@ void MainWindow::EnableAll(bool flag)
     ui->HMirroredBtn->setEnabled(flag);
     ui->NextBtn->setEnabled(flag);
     ui->PrevBtn->setEnabled(flag);
+    ui->NextStateBtn->setEnabled(flag);
+    ui->PrevStateBtn->setEnabled(flag);
     ui->RotateLeftBtn->setEnabled(flag);
     ui->RotateRightBtn->setEnabled(flag);
     ui->VMirroredBtn->setEnabled(flag);
@@ -172,6 +187,9 @@ void MainWindow::OnActionLoad()
 {
     const QString fileName = QFileDialog::getOpenFileName(this, QObject::tr("Открыть файл"), "/", "*.jpg *.jpeg *.png *.bmp");
     EnableAll(false);
+
+    if(fileName.isEmpty()) return;
+
     emit StartLoadingImage(fileName);
 }
 
@@ -194,7 +212,7 @@ void MainWindow::OnActionGaussBlur()
     emit GaussBlurStart(*myIMG_);
 }
 
-void MainWindow::ProcIsDone(std::shared_ptr<QImage> pImage)
+void MainWindow::ProcIsDone(std::shared_ptr<const QImage> pImage)
 {
     assert(pImage);
     myIMG_ = pImage;
